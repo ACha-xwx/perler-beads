@@ -330,45 +330,38 @@ const floatAnimation = `
     min-height: 48px;
     overflow: hidden;
     border-radius: 10px;
-    border: 2px solid color-mix(in srgb, var(--cell-color) 76%, white 24%);
-    background: color-mix(in srgb, var(--cell-color) 86%, black 14%);
+    border: 2px solid rgba(255,255,255,0.18);
+    background: var(--cell-color);
     color: rgba(20,20,18,0.74);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.32), 0 10px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.18);
     animation: paletteCellIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
     animation-delay: min(calc(var(--cell-index) * 12ms), 260ms);
-    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms ease, box-shadow 160ms ease;
   }
 
   .palette-color-cell::before {
-    content: "";
-    position: absolute;
-    inset: -35% auto -35% -50%;
-    width: 50%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.52), transparent);
-    transform: translateX(-140%) rotate(18deg);
+    content: none;
   }
 
   .palette-color-cell:hover {
     transform: translateY(-3px) scale(1.035);
-    filter: saturate(1.12);
     border-color: rgba(255,255,255,0.9);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 18px 34px rgba(0,0,0,0.32);
+    box-shadow: 0 16px 28px rgba(0,0,0,0.28);
   }
 
   .palette-color-cell:hover::before {
-    animation: paletteGlowSweep 520ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: none;
   }
 
   .palette-color-cell-selected {
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 0 0 2px rgba(var(--accent-rgb),0.52), 0 18px 34px rgba(0,0,0,0.34);
+    border-color: rgba(255,255,255,0.96);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb),0.52), 0 16px 30px rgba(0,0,0,0.3);
   }
 
   .palette-color-fill {
     position: absolute;
     inset: 0;
-    background:
-      radial-gradient(circle at 26% 20%, rgba(255,255,255,0.44), transparent 34%),
-      linear-gradient(135deg, rgba(255,255,255,0.16), transparent 46%);
+    background: transparent;
     pointer-events: none;
   }
 
@@ -383,7 +376,7 @@ const floatAnimation = `
     font-family: var(--font-geist-mono), "Cascadia Code", Consolas, monospace;
     font-size: 10px;
     font-weight: 800;
-    text-shadow: 0 1px 0 rgba(255,255,255,0.38);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.35), 0 -1px 0 rgba(0,0,0,0.12);
   }
 
   .palette-list .palette-color-key {
@@ -590,9 +583,6 @@ export default function Home() {
     step: 'select-source'
   });
 
-  // 新增：组件挂载状态
-  const [isMounted, setIsMounted] = useState<boolean>(false);
-
   // 新增：悬浮调色盘状态
   const [isFloatingPaletteOpen, setIsFloatingPaletteOpen] = useState<boolean>(true);
 
@@ -633,9 +623,17 @@ export default function Home() {
   const selectedFont = appearanceFonts.find(font => font.key === appearanceSettings.font) || appearanceFonts[0];
   const appearanceStyle = {
     '--ui-font': selectedFont.stack,
-    '--font-scale': `${appearanceSettings.scale / 100}`,
-    fontSize: `${appearanceSettings.scale}%`,
   } as React.CSSProperties;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const previousFontSize = root.style.fontSize;
+    root.style.fontSize = `${appearanceSettings.scale}%`;
+
+    return () => {
+      root.style.fontSize = previousFontSize;
+    };
+  }, [appearanceSettings.scale]);
 
   // 放大镜切换处理函数
   const handleToggleMagnifier = () => {
@@ -1016,45 +1014,6 @@ export default function Home() {
       showToast('复制失败，请检查浏览器权限');
     }
   };
-
-  // 添加一个安全的文件输入触发函数
-  const triggerFileInput = useCallback(() => {
-    // 检查组件是否已挂载
-    if (!isMounted) {
-      console.warn("组件尚未完全挂载，延迟触发文件选择");
-      setTimeout(() => triggerFileInput(), 200);
-      return;
-    }
-    
-    // 检查 ref 是否存在
-    if (fileInputRef.current) {
-      try {
-        fileInputRef.current.click();
-      } catch (error) {
-        console.error("触发文件选择失败:", error);
-        // 如果直接点击失败，尝试延迟执行
-        setTimeout(() => {
-          try {
-            fileInputRef.current?.click();
-          } catch (retryError) {
-            console.error("重试触发文件选择失败:", retryError);
-          }
-        }, 100);
-      }
-    } else {
-      // 如果 ref 不存在，延迟重试
-      console.warn("文件输入引用不存在，将在100ms后重试");
-      setTimeout(() => {
-        if (fileInputRef.current) {
-          try {
-            fileInputRef.current.click();
-          } catch (error) {
-            console.error("延迟触发文件选择失败:", error);
-          }
-        }
-      }, 100);
-    }
-  }, [isMounted]);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1658,12 +1617,6 @@ export default function Home() {
 
     return () => clearTimeout(timer);
   }, []);
-
-  // 设置组件挂载状态
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
     // --- Download function (ensure filename includes palette) ---
     const handleDownloadRequest = (options?: GridDownloadOptions) => {
         // 调用移动到utils/imageDownloader.ts中的downloadImage函数
@@ -2586,7 +2539,7 @@ export default function Home() {
               </button>
 
               <div className="hidden items-center gap-1.5 md:flex">
-                <button type="button" onClick={triggerFileInput} className="glass-action min-h-[44px] px-3 text-xs font-medium">导入</button>
+                <label htmlFor="bead-file-input" className="glass-action flex min-h-[44px] cursor-pointer items-center px-3 text-xs font-medium">导入</label>
                 <button
                   type="button"
                   onClick={() => setIsDownloadSettingsOpen(true)}
@@ -2625,11 +2578,12 @@ export default function Home() {
             <div className={`flex min-h-0 min-w-0 flex-1 px-2 py-3 transition-[padding] duration-200 ease-out sm:px-4 ${isAppearancePanelOpen ? 'lg:pr-[340px]' : ''}`}>
               <main ref={mainRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
                 <input
+                  id="bead-file-input"
                   type="file"
                   accept="image/jpeg, image/png, image/gif, .csv, text/csv, application/csv, text/plain"
                   onChange={handleFileChange}
                   ref={fileInputRef}
-                  className="hidden"
+                  className="sr-only"
                 />
                 <input
                   type="file"
@@ -2680,16 +2634,15 @@ export default function Home() {
                       </div>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={triggerFileInput}
-                      className="relative z-10 m-auto flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-dashed border-[rgba(var(--line-rgb),0.32)] bg-white/52 px-8 py-10 text-center transition hover:border-[rgba(var(--accent-rgb),0.45)] hover:bg-white/70"
+                    <label
+                      htmlFor="bead-file-input"
+                      className="relative z-10 m-auto flex max-w-sm cursor-pointer flex-col items-center gap-4 rounded-2xl border border-dashed border-[rgba(var(--line-rgb),0.32)] bg-white/52 px-8 py-10 text-center transition hover:border-[rgba(var(--accent-rgb),0.45)] hover:bg-white/70"
                     >
                       <BeadLogo />
                       <span className="text-lg font-semibold text-[var(--text)]">导入图片或 CSV</span>
                       <span className="text-sm leading-6 text-[var(--muted)]">拖到这里也可以。生成后可编辑、去背景、保存草稿和导出采购清单。</span>
                       <span className="glass-action glass-action-primary px-5 py-2 text-sm font-medium">选择文件</span>
-                    </button>
+                    </label>
                   )}
 
                   {tooltipData && <GridTooltip tooltipData={tooltipData} selectedColorSystem={selectedColorSystem} />}

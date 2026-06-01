@@ -21,7 +21,6 @@ body {
 }
 
 .workspace-app {
-  --font-scale: 1;
   --text: oklch(0.18 0.008 120);
   --muted: oklch(0.47 0.012 120);
   --page-a: oklch(0.988 0.004 105);
@@ -34,7 +33,7 @@ body {
   --accent-2-rgb: 120, 122, 114;
   color: var(--text);
   font-family: var(--ui-font, var(--font-geist-sans)), Arial, Helvetica, sans-serif;
-  font-size: calc(14px * var(--font-scale));
+  font-size: 0.875rem;
 }
 
 .workspace-app.theme-jade {
