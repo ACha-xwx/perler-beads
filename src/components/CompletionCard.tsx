@@ -163,7 +163,7 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
     const thumbnailDataURL = generateThumbnail();
     const isUsingPixelArt = userPhoto === thumbnailDataURL;
 
-    // 设置画布尺寸 (3:4比例，适合分享)
+    // 设置画布尺寸 (3:4比例，适合保存)
     const cardWidth = 720;
     const cardHeight = 960;
     canvas.width = cardWidth;
@@ -236,7 +236,7 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
           ctx.textAlign = 'center';
           ctx.shadowColor = 'rgba(0,0,0,0.3)';
           ctx.shadowBlur = 8;
-          ctx.fillText('🎉 作品完成 🎉', cardWidth / 2, 80);
+          ctx.fillText('作品完成', cardWidth / 2, 80);
           ctx.shadowBlur = 0;
 
           // 底部信息区域：直接显示文字
@@ -248,7 +248,7 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
           ctx.textAlign = 'center';
           ctx.shadowColor = 'rgba(0,0,0,0.5)';
           ctx.shadowBlur = 8;
-          ctx.fillText(`⏱️ ${formatTime(totalElapsedTime)} | 🔗 完成 ${totalBeads} 颗豆子`, cardWidth / 2, infoY + 40);
+          ctx.fillText(`${formatTime(totalElapsedTime)} | 完成 ${totalBeads} 颗豆子`, cardWidth / 2, infoY + 40);
 
           // 底部品牌信息
           ctx.font = '14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
@@ -321,7 +321,7 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
           ctx.textAlign = 'center';
           ctx.shadowColor = 'rgba(0,0,0,0.5)';
           ctx.shadowBlur = 8;
-          ctx.fillText(`⏱️ 总用时 ${formatTime(totalElapsedTime)} | 🔗 共完成 ${totalBeads} 颗豆子`, cardWidth / 2, infoCardY + 35);
+          ctx.fillText(`总用时 ${formatTime(totalElapsedTime)} | 共完成 ${totalBeads} 颗豆子`, cardWidth / 2, infoCardY + 35);
 
           // 添加小的拼豆原图作为装饰
           if (thumbnailDataURL) {
@@ -410,14 +410,14 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="palette-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/42 p-4 backdrop-blur-md">
+      <div className="completion-modal settings-shell max-h-[90vh] w-full max-w-md overflow-y-auto rounded-[22px]">
         <div className="p-6">
           <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              🎉 作品完成 🎉
+            <h2 className="text-2xl font-black text-[var(--text)] mb-2">
+              作品完成
             </h2>
-            <div className="text-gray-600 space-y-1">
+            <div className="space-y-1 text-sm text-[var(--muted)]">
               <p>总用时：{formatTime(totalElapsedTime)}</p>
               <p>共完成：{totalBeads} 颗豆子</p>
             </div>
@@ -427,13 +427,13 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
             <div className="text-center">
               {!isCapturing ? (
                 <div>
-                  <p className="text-gray-600 mb-4">
+                  <p className="mb-4 text-sm text-[var(--muted)]">
                     拍一张照片生成专属打卡图吧！
                   </p>
                   {cameraError && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                      <p className="text-yellow-800 text-sm">
-                        📱 无法访问相机，可能是权限限制或设备不支持。<br/>
+                    <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/80 p-3">
+                      <p className="text-sm text-amber-800">
+                        无法访问相机，可能是权限限制或设备不支持。<br/>
                         你可以选择使用作品图生成打卡图。
                       </p>
                     </div>
@@ -441,15 +441,15 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
                   <div className="space-y-3">
                     <button
                       onClick={startCamera}
-                      className="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                      className="glass-action glass-action-primary w-full px-6 py-3 text-sm font-medium"
                     >
-                      📸 开启相机拍照
+                      开启相机拍照
                     </button>
                     <button
                       onClick={skipPhoto}
-                      className="w-full bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors"
+                      className="glass-action w-full px-6 py-3 text-sm font-medium"
                     >
-                      🎨 跳过拍照，使用作品图
+                      跳过拍照，使用作品图
                     </button>
                   </div>
                 </div>
@@ -459,13 +459,13 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
                     ref={videoRef}
                     autoPlay
                     playsInline
-                    className="w-full max-w-xs mx-auto rounded-lg mb-4"
+                    className="mx-auto mb-4 w-full max-w-xs rounded-xl border border-[rgba(var(--line-rgb),0.18)]"
                   />
                   <button
                     onClick={takePhoto}
-                    className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors mr-2"
+                    className="glass-action glass-action-primary mr-2 px-6 py-3 text-sm font-medium"
                   >
-                    📸 拍照
+                    拍照
                   </button>
                   <button
                     onClick={() => {
@@ -473,7 +473,7 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
                       stream?.getTracks().forEach(track => track.stop());
                       setIsCapturing(false);
                     }}
-                    className="bg-gray-500 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+                    className="glass-action px-4 py-3 text-sm font-medium"
                   >
                     取消
                   </button>
@@ -486,18 +486,18 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
               <img
                 src={userPhoto}
                 alt="用户照片"
-                className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
+                className="mx-auto mb-4 h-32 w-32 rounded-2xl border border-[rgba(var(--line-rgb),0.18)] object-cover shadow-[0_18px_40px_rgba(var(--shadow-rgb),0.14)]"
               />
               <div className="space-y-3">
                 <button
                   onClick={downloadCard}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"
+                  className="glass-action glass-action-primary w-full py-3 text-sm font-medium"
                 >
-                  📥 下载打卡图
+                  下载打卡图
                 </button>
                 <button
                   onClick={() => setUserPhoto(null)}
-                  className="w-full bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                  className="glass-action w-full py-2 text-sm font-medium"
                 >
                   重新拍照
                 </button>
@@ -505,10 +505,10 @@ const CompletionCard: React.FC<CompletionCardProps> = ({
             </div>
           )}
 
-          <div className="mt-6 pt-4 border-t border-gray-200">
+          <div className="mt-6 border-t border-[rgba(var(--line-rgb),0.14)] pt-4">
             <button
               onClick={onClose}
-              className="w-full bg-gray-100 text-gray-600 py-2 rounded-lg hover:bg-gray-200 transition-colors"
+              className="w-full px-4 py-2 text-sm text-[var(--muted)] transition hover:text-[var(--text)]"
             >
               稍后再说
             </button>

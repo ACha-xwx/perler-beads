@@ -91,11 +91,11 @@ const FocusCanvas: React.FC<FocusCanvasProps> = ({
 
         // 如果是已完成的格子且是当前颜色，添加勾选标记
         if (completedCells.has(cellKey) && pixel.color === currentColor) {
-          ctx.fillStyle = 'rgba(0, 255, 0, 0.6)';
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.62)';
           ctx.fillRect(x, y, cellSize, cellSize);
           
           // 绘制勾选图标
-          ctx.strokeStyle = '#fff';
+          ctx.strokeStyle = '#111111';
           ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.moveTo(x + cellSize * 0.2, y + cellSize * 0.5);
@@ -109,7 +109,7 @@ const FocusCanvas: React.FC<FocusCanvasProps> = ({
           cell.row === row && cell.col === col
         );
         if (isInRecommendedRegion) {
-          ctx.strokeStyle = '#ff4444';
+          ctx.strokeStyle = '#111111';
           ctx.lineWidth = 3;
           ctx.setLineDash([5, 5]);
           ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
@@ -119,7 +119,7 @@ const FocusCanvas: React.FC<FocusCanvasProps> = ({
         // 如果是推荐区域的中心点，添加特殊标记
         if (recommendedCell && recommendedCell.row === row && recommendedCell.col === col && isInRecommendedRegion) {
           // 绘制中心点标记
-          ctx.fillStyle = '#ff4444';
+          ctx.fillStyle = '#111111';
           ctx.beginPath();
           ctx.arc(x + cellSize / 2, y + cellSize / 2, 4, 0, 2 * Math.PI);
           ctx.fill();
@@ -331,18 +331,20 @@ const FocusCanvas: React.FC<FocusCanvasProps> = ({
   return (
     <div 
       ref={containerRef}
-      className="w-full h-full flex items-center justify-center overflow-hidden bg-gray-100"
+      className="focus-canvas-shell h-full w-full overflow-hidden rounded-[22px]"
       style={{ touchAction: 'none' }}
     >
-      <div
+      <div className="flex h-full w-full items-center justify-center">
+        <div
         style={{
           transform: `scale(${canvasScale}) translate(${canvasOffset.x}px, ${canvasOffset.y}px)`,
-          transformOrigin: 'center center'
+          transformOrigin: 'center center',
+          transition: isDragging ? 'none' : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)'
         }}
       >
         <canvas
           ref={canvasRef}
-          className="cursor-crosshair border border-gray-300"
+          className="cursor-crosshair rounded-lg border border-[rgba(var(--line-rgb),0.24)] shadow-[0_18px_44px_rgba(var(--shadow-rgb),0.16)]"
           onClick={handleClick}
           onWheel={handleWheel}
           onTouchStart={handleTouchStart}
@@ -353,6 +355,7 @@ const FocusCanvas: React.FC<FocusCanvasProps> = ({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
         />
+        </div>
       </div>
     </div>
   );

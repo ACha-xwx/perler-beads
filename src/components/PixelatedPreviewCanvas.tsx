@@ -3,6 +3,28 @@
 import React, { useRef, useEffect, TouchEvent, MouseEvent, useState } from 'react';
 import { MappedPixel } from '../utils/pixelation';
 
+const getCanvasSizeForGrid = (dims: { N: number; M: number }) => {
+  const { N, M } = dims;
+  const baseWidth = 500;
+  const minCellSize = 4;
+  const recommendedCellSize = 6;
+  let outputWidth = baseWidth;
+
+  if (N > 100) {
+    const requiredWidthForMinSize = N * minCellSize;
+    const requiredWidthForRecommendedSize = N * recommendedCellSize;
+    const viewportLimit = typeof window === 'undefined' ? 1200 : window.innerWidth * 0.9;
+    const maxWidth = Math.min(1200, viewportLimit);
+    outputWidth = Math.min(maxWidth, Math.max(baseWidth, requiredWidthForRecommendedSize));
+    outputWidth = Math.max(outputWidth, requiredWidthForMinSize);
+  }
+
+  return {
+    width: Math.round(outputWidth),
+    height: Math.max(1, Math.round(outputWidth * (M / N))),
+  };
+};
+
 interface PixelatedPreviewCanvasProps {
   mappedPixelData: MappedPixel[][] | null;
   gridDimensions: { N: number; M: number } | null;
@@ -18,6 +40,7 @@ interface PixelatedPreviewCanvasProps {
   ) => void;
   highlightColorKey?: string | null;
   onHighlightComplete?: () => void;
+  panMode?: boolean;
 }
 
 // 绘制像素化画布的函数
@@ -47,6 +70,12 @@ const drawPixelatedCanvas = (
   const gridLineColor = isDarkMode ? '#4B5563' : '#DDDDDD'; // gray-600 : lighter gray
 
   const { N, M } = dims;
+  const canvasSize = getCanvasSizeForGrid(dims);
+  if (canvas.width !== canvasSize.width || canvas.height !== canvasSize.height) {
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
+  }
+
   const outputWidth = canvas.width;
   const outputHeight = canvas.height;
   const cellWidthOutput = outputWidth / N;
@@ -104,10 +133,12 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
   onInteraction,
   highlightColorKey,
   onHighlightComplete,
+  panMode = false,
 }) => {
   const [darkModeState, setDarkModeState] = useState<boolean | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number; pageX: number; pageY: number } | null>(null);
   const touchMovedRef = useRef<boolean>(false);
+  const mousePanRef = useRef<{ x: number; y: number; scrollLeft: number; scrollTop: number } | null>(null);
   const [isHighlighting, setIsHighlighting] = useState(false);
 
   // Effect to detect dark mode changes and update state
@@ -161,6 +192,15 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
   
   // 鼠标移动时显示提示
   const handleMouseMove = (event: MouseEvent<HTMLCanvasElement>) => {
+    if (panMode && mousePanRef.current) {
+      const scrollParent = canvasRef.current?.parentElement;
+      if (scrollParent) {
+        scrollParent.scrollLeft = mousePanRef.current.scrollLeft - (event.clientX - mousePanRef.current.x);
+        scrollParent.scrollTop = mousePanRef.current.scrollTop - (event.clientY - mousePanRef.current.y);
+      }
+      return;
+    }
+
     // 只有在非手动模式下才通过mousemove显示tooltip，避免干扰手动上色
     if (!isManualColoringMode) {
         onInteraction(event.clientX, event.clientY, event.pageX, event.pageY, false);
@@ -169,12 +209,30 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
 
   // 鼠标离开时隐藏提示
   const handleMouseLeave = () => {
+    mousePanRef.current = null;
     // 鼠标离开时总是隐藏tooltip
     onInteraction(0, 0, 0, 0, false, true);
   };
 
+  const handleMouseDown = (event: MouseEvent<HTMLCanvasElement>) => {
+    if (!panMode) return;
+    const scrollParent = canvasRef.current?.parentElement;
+    if (!scrollParent) return;
+    mousePanRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      scrollLeft: scrollParent.scrollLeft,
+      scrollTop: scrollParent.scrollTop,
+    };
+  };
+
+  const handleMouseUp = () => {
+    mousePanRef.current = null;
+  };
+
   // 鼠标点击处理（用于手动上色模式）
   const handleClick = (event: MouseEvent<HTMLCanvasElement>) => {
+    if (panMode) return;
     // 鼠标点击行为保持不变：
     // 手动模式下：上色
     // 非手动模式下：切换tooltip
@@ -218,12 +276,26 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
       // 一旦确定是移动，就隐藏tooltip
       onInteraction(0, 0, 0, 0, false, true);
     }
+
+    if (panMode && touchMovedRef.current) {
+      const scrollParent = canvasRef.current?.parentElement;
+      if (scrollParent) {
+        scrollParent.scrollLeft -= touch.clientX - touchStartPosRef.current.x;
+        scrollParent.scrollTop -= touch.clientY - touchStartPosRef.current.y;
+        touchStartPosRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+          pageX: touch.pageX,
+          pageY: touch.pageY,
+        };
+      }
+    }
   };
   
   // 触摸结束时不再自动隐藏提示框
   const handleTouchEnd = () => {
     // 检查是否是手动模式，并且触摸没有移动（判定为点击）
-    if (isManualColoringMode && !touchMovedRef.current && touchStartPosRef.current) {
+    if (isManualColoringMode && !panMode && !touchMovedRef.current && touchStartPosRef.current) {
       // 使用触摸开始时的坐标来执行上色操作
       const { x, y, pageX, pageY } = touchStartPosRef.current;
       onInteraction(x, y, pageX, pageY, true); // isClick: true 表示执行上色
@@ -239,7 +311,9 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
   return (
     <canvas
       ref={canvasRef}
+      onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
       onTouchStart={handleTouchStart}
@@ -247,14 +321,14 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd} // 添加 onTouchCancel 以处理触摸中断的情况
       className={`border border-gray-300 dark:border-gray-600 max-w-full h-auto rounded block ${
-        isManualColoringMode ? 'cursor-pointer' : 'cursor-grab' // 改为 grab 光标提示可以拖动
+        panMode ? 'cursor-grab active:cursor-grabbing' : (isManualColoringMode ? 'cursor-pointer' : 'cursor-grab')
       }`}
       style={{
         imageRendering: 'pixelated',
-        // touchAction: 'none' // 移除此行以允许页面滚动和缩放
+        touchAction: panMode ? 'none' : 'auto',
       }}
     />
   );
 };
 
-export default PixelatedPreviewCanvas; 
+export default PixelatedPreviewCanvas;

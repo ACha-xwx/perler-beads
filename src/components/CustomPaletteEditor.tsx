@@ -186,7 +186,7 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
                 setActiveSeries('ALL');
               }}
               placeholder="搜索色号"
-              className="h-11 w-full rounded-xl border border-white/12 bg-white/7 pl-10 pr-3 text-sm text-white outline-none transition focus:border-orange-300/80 focus:bg-white/10 focus:ring-4 focus:ring-orange-400/12"
+              className="h-11 w-full rounded-xl border border-white/12 bg-white/7 pl-10 pr-3 text-sm text-white outline-none transition focus:border-[rgba(var(--accent-rgb),0.8)] focus:bg-white/10 focus:ring-4 focus:ring-[rgba(var(--accent-rgb),0.14)]"
             />
           </label>
         </div>

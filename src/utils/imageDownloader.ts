@@ -51,11 +51,13 @@ function sortColorKeys(a: string, b: string): number {
 export function exportCsvData({
   mappedPixelData,
   gridDimensions,
-  selectedColorSystem
+  selectedColorSystem,
+  horizontalMirror = false,
 }: {
   mappedPixelData: MappedPixel[][] | null;
   gridDimensions: { N: number; M: number } | null;
   selectedColorSystem: ColorSystem;
+  horizontalMirror?: boolean;
 }): void {
   if (!mappedPixelData || !gridDimensions) {
     console.error("导出失败: 映射数据或尺寸无效。");
@@ -71,7 +73,8 @@ export function exportCsvData({
   for (let row = 0; row < M; row++) {
     const rowData: string[] = [];
     for (let col = 0; col < N; col++) {
-      const cellData = mappedPixelData[row][col];
+      const sourceCol = horizontalMirror ? N - 1 - col : col;
+      const cellData = mappedPixelData[row][sourceCol];
       if (cellData && !cellData.isExternal) {
         // 内部单元格，记录hex颜色值
         rowData.push(cellData.color);
@@ -92,7 +95,7 @@ export function exportCsvData({
   const url = URL.createObjectURL(blob);
   
   link.setAttribute('href', url);
-  link.setAttribute('download', `bead-pattern-${N}x${M}-${selectedColorSystem}.csv`);
+  link.setAttribute('download', `${horizontalMirror ? 'mirrored-' : ''}bead-pattern-${N}x${M}-${selectedColorSystem}.csv`);
   link.style.visibility = 'hidden';
   
   document.body.appendChild(link);
@@ -236,7 +239,17 @@ export async function downloadImage({
     const downloadCellSize = 30;
   
     // 从下载选项中获取设置
-    const { showGrid, gridInterval, showCoordinates, gridLineColor, includeStats, showCellNumbers = true } = options;
+    const {
+      showGrid,
+      gridInterval,
+      showCoordinates,
+      gridLineColor,
+      includeStats,
+      showCellNumbers = true,
+      horizontalMirror = false,
+      addWatermark = true,
+      authorName = '',
+    } = options;
   
     // 设置边距空间用于坐标轴标注（如果需要）
     const axisLabelSize = showCoordinates ? Math.max(30, Math.floor(downloadCellSize)) : 0;
@@ -398,7 +411,7 @@ export async function downloadImage({
     ctx.font = `400 ${subTitleFontSize}px system-ui, -apple-system, sans-serif`;
     const subTitleY = titleBarHeight * 0.65;
     
-    ctx.fillText(APP_TAGLINE, titleStartX, subTitleY);
+    ctx.fillText(authorName.trim() ? `${APP_TAGLINE} · ${authorName.trim()}` : APP_TAGLINE, titleStartX, subTitleY);
     
     
     
@@ -524,7 +537,8 @@ export async function downloadImage({
     // 绘制所有单元格
     for (let j = 0; j < M; j++) {
       for (let i = 0; i < N; i++) {
-        const cellData = mappedPixelData[j][i];
+        const sourceCol = horizontalMirror ? N - 1 - i : i;
+        const cellData = mappedPixelData[j][sourceCol];
         // 计算绘制位置，考虑额外边距和标题栏高度
         const drawX = extraLeftMargin + i * downloadCellSize + axisLabelSize;
         const drawY = titleBarHeight + extraTopMargin + j * downloadCellSize + axisLabelSize;
@@ -584,40 +598,42 @@ export async function downloadImage({
     ctx.lineWidth = 1.5;
     ctx.strokeRect(
       extraLeftMargin + axisLabelSize + 0.5, 
-      titleBarHeight + extraTopMargin + axisLabelSize + 0.5, 
-      N * downloadCellSize, 
+      titleBarHeight + extraTopMargin + axisLabelSize + 0.5,
+      N * downloadCellSize,
       M * downloadCellSize
     );
 
-    const secondaryWatermarkFontSize = Math.max(10, Math.floor(downloadCellSize * 0.5));
-    const secondaryText = APP_NAME;
-    
-    ctx.font = `500 ${secondaryWatermarkFontSize}px system-ui, -apple-system, sans-serif`;
-    const secondaryMetrics = ctx.measureText(secondaryText);
-    const secondaryWidth = secondaryMetrics.width;
-    const secondaryHeight = secondaryWatermarkFontSize;
-    
-    const secondaryWatermarkX = extraLeftMargin + axisLabelSize + 15;
-    const secondaryWatermarkY = titleBarHeight + extraTopMargin + axisLabelSize + secondaryHeight + 15;
-    
-    // 副水印背景
-    const secondaryBgPadding = 4;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
-    ctx.beginPath();
-    ctx.roundRect(
-      secondaryWatermarkX - secondaryBgPadding,
-      secondaryWatermarkY - secondaryHeight - secondaryBgPadding,
-      secondaryWidth + secondaryBgPadding * 2,
-      secondaryHeight + secondaryBgPadding * 2,
-      3
-    );
-    ctx.fill();
-    
-    // 副水印文字
-    ctx.fillStyle = '#6B7280'; // 中等灰色，存在但不突兀
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(secondaryText, secondaryWatermarkX, secondaryWatermarkY);
+    if (addWatermark) {
+      const secondaryWatermarkFontSize = Math.max(10, Math.floor(downloadCellSize * 0.5));
+      const secondaryText = authorName.trim() ? `${APP_NAME} · ${authorName.trim()}` : APP_NAME;
+
+      ctx.font = `500 ${secondaryWatermarkFontSize}px system-ui, -apple-system, sans-serif`;
+      const secondaryMetrics = ctx.measureText(secondaryText);
+      const secondaryWidth = secondaryMetrics.width;
+      const secondaryHeight = secondaryWatermarkFontSize;
+
+      const secondaryWatermarkX = extraLeftMargin + axisLabelSize + 15;
+      const secondaryWatermarkY = titleBarHeight + extraTopMargin + axisLabelSize + secondaryHeight + 15;
+
+      // 副水印背景
+      const secondaryBgPadding = 4;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.beginPath();
+      ctx.roundRect(
+        secondaryWatermarkX - secondaryBgPadding,
+        secondaryWatermarkY - secondaryHeight - secondaryBgPadding,
+        secondaryWidth + secondaryBgPadding * 2,
+        secondaryHeight + secondaryBgPadding * 2,
+        3
+      );
+      ctx.fill();
+
+      // 副水印文字
+      ctx.fillStyle = '#6B7280'; // 中等灰色，存在但不突兀
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(secondaryText, secondaryWatermarkX, secondaryWatermarkY);
+    }
 
     // 绘制统计信息
     if (includeStats && colorCounts) {
@@ -714,40 +730,42 @@ export async function downloadImage({
       ctx.textAlign = 'right';
       ctx.fillText(`总计: ${totalBeadCount} 颗`, downloadWidth - statsPadding, totalY);
       
-      const statsWatermarkFontSize = Math.max(10, Math.floor(statsFontSize * 0.7));
-      const statsWatermarkText = APP_NAME;
-      
-      ctx.font = `500 ${statsWatermarkFontSize}px system-ui, -apple-system, sans-serif`;
-      const statsTextMetrics = ctx.measureText(statsWatermarkText);
-      const statsTextWidth = statsTextMetrics.width;
-      const statsTextHeight = statsWatermarkFontSize;
-      
-      const statsWatermarkX = statsPadding;
-      const statsWatermarkY = totalY + 20;
-      
-      // 统计区域水印背景
-      const statsBgPadding = 5;
-      ctx.fillStyle = 'rgba(248, 250, 252, 0.9)'; // 浅灰背景，更柔和
-      ctx.beginPath();
-      ctx.roundRect(
-        statsWatermarkX - statsBgPadding,
-        statsWatermarkY - statsTextHeight - statsBgPadding,
-        statsTextWidth + statsBgPadding * 2,
-        statsTextHeight + statsBgPadding * 2,
-        3
-      );
-      ctx.fill();
-      
-      // 统计区域水印边框
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      
-      // 统计区域水印文字
-      ctx.fillStyle = '#64748B'; // 清晰的深灰色
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'bottom';
-      ctx.fillText(statsWatermarkText, statsWatermarkX, statsWatermarkY);
+      if (addWatermark) {
+        const statsWatermarkFontSize = Math.max(10, Math.floor(statsFontSize * 0.7));
+        const statsWatermarkText = authorName.trim() ? `${APP_NAME} · ${authorName.trim()}` : APP_NAME;
+
+        ctx.font = `500 ${statsWatermarkFontSize}px system-ui, -apple-system, sans-serif`;
+        const statsTextMetrics = ctx.measureText(statsWatermarkText);
+        const statsTextWidth = statsTextMetrics.width;
+        const statsTextHeight = statsWatermarkFontSize;
+
+        const statsWatermarkX = statsPadding;
+        const statsWatermarkY = totalY + 20;
+
+        // 统计区域水印背景
+        const statsBgPadding = 5;
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.9)'; // 浅灰背景，更柔和
+        ctx.beginPath();
+        ctx.roundRect(
+          statsWatermarkX - statsBgPadding,
+          statsWatermarkY - statsTextHeight - statsBgPadding,
+          statsTextWidth + statsBgPadding * 2,
+          statsTextHeight + statsBgPadding * 2,
+          3
+        );
+        ctx.fill();
+
+        // 统计区域水印边框
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // 统计区域水印文字
+        ctx.fillStyle = '#64748B'; // 清晰的深灰色
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(statsWatermarkText, statsWatermarkX, statsWatermarkY);
+      }
       
       // 更新统计区域高度的计算 - 需要包含新增的顶部间距
       const footerHeight = 30; // 总计部分高度
@@ -784,9 +802,9 @@ export async function downloadImage({
     try {
       const dataURL = downloadCanvas.toDataURL('image/png');
       const link = document.createElement('a');
-      link.download = showCellNumbers
+      link.download = `${horizontalMirror ? 'mirrored-' : ''}${showCellNumbers
         ? `bead-grid-${N}x${M}-keys-palette_${selectedColorSystem}.png`
-        : `bead-grid-${N}x${M}-pixel-palette_${selectedColorSystem}.png`;
+        : `bead-grid-${N}x${M}-pixel-palette_${selectedColorSystem}.png`}`;
       link.href = dataURL;
       document.body.appendChild(link);
       link.click();
@@ -798,7 +816,8 @@ export async function downloadImage({
         exportCsvData({
           mappedPixelData,
           gridDimensions,
-          selectedColorSystem
+          selectedColorSystem,
+          horizontalMirror,
         });
       }
     } catch (e) {

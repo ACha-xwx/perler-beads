@@ -19,6 +19,15 @@ import SettingsPanel from '../../components/SettingsPanel';
 import CelebrationAnimation from '../../components/CelebrationAnimation';
 import CompletionCard from '../../components/CompletionCard';
 import { getColorKeyByHex, ColorSystem } from '../../utils/colorSystemUtils';
+import {
+  appearanceFonts,
+  defaultAppearanceSettings,
+  normalizeAppearanceSettings,
+  AppearanceSettings,
+} from '../../config/appearance';
+import { APP_NAME } from '../../config/brand';
+
+const APPEARANCE_STORAGE_KEY = 'beadforgeAppearance';
 
 interface FocusModeState {
   // 当前状态
@@ -61,6 +70,7 @@ export default function FocusMode() {
   // 从localStorage或URL参数获取像素数据
   const [mappedPixelData, setMappedPixelData] = useState<MappedPixel[][] | null>(null);
   const [gridDimensions, setGridDimensions] = useState<{ N: number; M: number } | null>(null);
+  const [appearanceSettings, setAppearanceSettings] = useState<AppearanceSettings>(defaultAppearanceSettings);
 
   // 专心模式状态
   const [focusState, setFocusState] = useState<FocusModeState>({
@@ -94,6 +104,27 @@ export default function FocusMode() {
     total: number;
     completed: number;
   }>>([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(APPEARANCE_STORAGE_KEY);
+      if (stored) {
+        setAppearanceSettings(normalizeAppearanceSettings(JSON.parse(stored)));
+      }
+    } catch {
+      setAppearanceSettings(defaultAppearanceSettings);
+    }
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const previousFontSize = root.style.fontSize;
+    root.style.fontSize = `${appearanceSettings.scale}%`;
+
+    return () => {
+      root.style.fontSize = previousFontSize;
+    };
+  }, [appearanceSettings.scale]);
 
   // 计时器管理
   useEffect(() => {
@@ -455,12 +486,59 @@ export default function FocusMode() {
     setFocusState(prev => ({ ...prev, showCompletionCard: false }));
   }, []);
 
+  const handleExportProgress = useCallback(() => {
+    if (!mappedPixelData || !gridDimensions) return;
+
+    const payload = {
+      app: APP_NAME,
+      exportedAt: new Date().toISOString(),
+      gridDimensions,
+      completedCells: Array.from(focusState.completedCells),
+      colorProgress: focusState.colorProgress,
+      availableColors,
+      totalElapsedTime: focusState.totalElapsedTime,
+      guidanceMode: focusState.guidanceMode,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `beadforge-focus-progress-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [availableColors, focusState.colorProgress, focusState.completedCells, focusState.guidanceMode, focusState.totalElapsedTime, gridDimensions, mappedPixelData]);
+
+  const handleResetProgress = useCallback(() => {
+    const resetProgress = availableColors.reduce<Record<string, { completed: number; total: number }>>((acc, color) => {
+      acc[color.color] = { completed: 0, total: color.total };
+      return acc;
+    }, {});
+
+    setAvailableColors(prev => prev.map(color => ({ ...color, completed: 0 })));
+    setFocusState(prev => ({
+      ...prev,
+      completedCells: new Set<string>(),
+      colorProgress: resetProgress,
+      selectedCell: null,
+      showCelebration: false,
+      showCompletionCard: false,
+    }));
+  }, [availableColors]);
+
+  const selectedFont = appearanceFonts.find(font => font.key === appearanceSettings.font) || appearanceFonts[0];
+  const appearanceStyle = {
+    '--ui-font': selectedFont.stack,
+  } as React.CSSProperties;
+
   if (!mappedPixelData || !gridDimensions) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载中...</p>
+      <div
+        className={`workspace-app theme-${appearanceSettings.theme} min-h-screen tech-grid-bg flex items-center justify-center`}
+        style={appearanceStyle}
+      >
+        <div className="settings-shell completion-modal rounded-[22px] px-8 py-7 text-center">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2 border-[rgba(var(--accent-rgb),0.18)] border-b-[rgb(var(--accent-rgb))]" />
+          <p className="text-sm text-[var(--muted)]">加载中...</p>
         </div>
       </div>
     );
@@ -471,28 +549,37 @@ export default function FocusMode() {
     Math.round((currentColorInfo.completed / currentColorInfo.total) * 100) : 0;
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div
+      className={`workspace-app theme-${appearanceSettings.theme} h-[100dvh] flex flex-col overflow-hidden tech-grid-bg`}
+      style={appearanceStyle}
+    >
       {/* 顶部导航栏 */}
-      <header className="h-15 bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-40 border-b border-[rgba(var(--line-rgb),0.22)] bg-[rgba(var(--panel-rgb),0.76)]/90 px-3 py-2 backdrop-blur-xl">
+        <div className="mx-auto flex h-12 max-w-screen-2xl items-center justify-between gap-3">
         <button 
           onClick={() => window.history.back()}
-          className="flex items-center text-gray-600 hover:text-gray-800"
+          className="glass-action flex min-h-[40px] items-center gap-1.5 px-3 text-xs font-medium"
         >
           <svg className="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           返回
         </button>
-        <h1 className="text-lg font-medium text-gray-800">专心拼豆（AlphaTest）</h1>
+        <div className="min-w-0 text-center">
+          <h1 className="truncate text-base font-semibold text-[var(--text)]">专心拼豆</h1>
+          <p className="hidden text-[10px] text-[var(--muted)] sm:block">{APP_NAME}</p>
+        </div>
         <button 
           onClick={() => setFocusState(prev => ({ ...prev, showSettingsPanel: true }))}
-          className="text-gray-600 hover:text-gray-800"
+          className="glass-action grid min-h-[40px] min-w-[40px] place-items-center"
+          aria-label="打开设置"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </button>
+        </div>
       </header>
 
       {/* 当前颜色状态栏 */}
@@ -503,7 +590,7 @@ export default function FocusMode() {
       />
 
       {/* 主画布区域 */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="relative flex-1 overflow-hidden px-3 py-3">
         <FocusCanvas
           mappedPixelData={mappedPixelData}
           gridDimensions={gridDimensions}
@@ -561,6 +648,8 @@ export default function FocusMode() {
           onSectionLineColorChange={(color: string) => setFocusState(prev => ({ ...prev, sectionLineColor: color }))}
           enableCelebration={focusState.enableCelebration}
           onEnableCelebrationChange={(enable: boolean) => setFocusState(prev => ({ ...prev, enableCelebration: enable }))}
+          onExportProgress={handleExportProgress}
+          onResetProgress={handleResetProgress}
           onClose={() => setFocusState(prev => ({ ...prev, showSettingsPanel: false }))}
         />
       )}

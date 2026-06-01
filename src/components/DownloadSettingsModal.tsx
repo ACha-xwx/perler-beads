@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GridDownloadOptions } from '../types/downloadTypes';
 
-// 定义可选的网格线颜色
 const gridLineColorOptions = [
-  { name: '深灰色', value: '#555555' },
+  { name: '深灰', value: '#555555' },
   { name: '红色', value: '#FF0000' },
   { name: '蓝色', value: '#0000FF' },
   { name: '绿色', value: '#008000' },
@@ -17,208 +16,182 @@ interface DownloadSettingsModalProps {
   options: GridDownloadOptions;
   onOptionsChange: (options: GridDownloadOptions) => void;
   onDownload: (opts?: GridDownloadOptions) => void;
+  themeClassName?: string;
+  themeStyle?: React.CSSProperties;
 }
+
+const Toggle = ({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) => (
+  <button
+    type="button"
+    onClick={() => onChange(!checked)}
+    className={`relative h-7 w-12 rounded-full border transition duration-200 ${
+      checked
+        ? 'border-[rgba(var(--accent-rgb),0.58)] bg-[rgb(var(--accent-rgb))] shadow-[0_0_24px_rgba(var(--accent-rgb),0.24)]'
+        : 'border-white/12 bg-white/12'
+    }`}
+    aria-pressed={checked}
+  >
+    <span
+      className={`absolute top-1 h-5 w-5 rounded-full bg-[#f7f2e9] shadow transition-transform duration-200 ${
+        checked ? 'translate-x-5' : 'translate-x-1'
+      }`}
+    />
+  </button>
+);
 
 const DownloadSettingsModal: React.FC<DownloadSettingsModalProps> = ({
   isOpen,
   onClose,
   options,
   onOptionsChange,
-  onDownload
+  onDownload,
+  themeClassName = '',
+  themeStyle,
 }) => {
-  // 将useState移到顶层，不管isOpen是什么值
-  const [tempOptions, setTempOptions] = useState<GridDownloadOptions>({...options});
-  
-  // 如果不是打开状态，仍然可以返回null
+  const [tempOptions, setTempOptions] = useState<GridDownloadOptions>({ ...options });
+
+  useEffect(() => {
+    if (isOpen) {
+      setTempOptions({ ...options });
+    }
+  }, [isOpen, options]);
+
   if (!isOpen) return null;
-  
-  // 处理选项变更 - 使用更具体的类型而不是any
+
   const handleOptionChange = (key: keyof GridDownloadOptions, value: string | number | boolean) => {
-    setTempOptions((prev: GridDownloadOptions) => ({
+    setTempOptions(prev => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
-  
-  // 保存选项并立即使用新设置下载
+
   const handleSave = () => {
-    // 更新父组件中的设置状态（虽然下载时不依赖这个更新）
     onOptionsChange(tempOptions);
-    
-    // 直接使用当前临时设置下载，不依赖状态更新
-    onDownload(tempOptions); 
-    
+    onDownload(tempOptions);
     onClose();
   };
-  
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden w-full max-w-md">
-        <div className="p-5">
-          <div className="flex justify-between items-center border-b dark:border-gray-700 pb-3 mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">下载图纸设置</h3>
-            <button 
-              onClick={onClose}
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+    <div
+      className={`palette-backdrop fixed inset-0 z-[120] flex items-center justify-center bg-black/55 p-4 backdrop-blur-md ${themeClassName}`}
+      style={themeStyle}
+    >
+      <div className="palette-modal w-full max-w-[680px]">
+        <div className="palette-lab flex max-h-[88vh] flex-col overflow-hidden rounded-[22px] border border-white/12 bg-[#181715] text-[#f7f2e9] shadow-[0_34px_100px_rgba(0,0,0,0.42)]">
+          <div className="palette-lab-head flex items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
+            <div>
+              <div className="text-base font-semibold">下载图纸设置</div>
+              <div className="mt-1 text-xs text-white/48">导出图纸、采购统计和可重新导入的源数据</div>
+            </div>
+            <button type="button" onClick={onClose} className="palette-icon-button" aria-label="关闭下载设置">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <path d="M18 6L6 18" />
+                <path d="M6 6l12 12" />
               </svg>
             </button>
           </div>
-          
-          <div className="space-y-4">
-            {/* 显示网格线选项 */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                显示网格线
-              </label>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer"
-                  checked={tempOptions.showGrid}
-                  onChange={(e) => handleOptionChange('showGrid', e.target.checked)}
+
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+            <section className="download-panel-card">
+              <label className="grid gap-2 text-sm">
+                <span className="font-medium text-white/82">作者署名</span>
+                <input
+                  type="text"
+                  value={tempOptions.authorName}
+                  onChange={event => handleOptionChange('authorName', event.target.value)}
+                  placeholder="可留空"
+                  className="h-11 rounded-xl border border-white/12 bg-white/7 px-3 text-sm text-white outline-none transition focus:border-[rgba(var(--accent-rgb),0.8)] focus:bg-white/10 focus:ring-4 focus:ring-[rgba(var(--accent-rgb),0.14)]"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </label>
-            </div>
-            
-            {/* 网格线设置 (仅当显示网格线时) */}
-            {tempOptions.showGrid && (
-              <div className="space-y-4 pl-2 border-l-2 border-gray-200 dark:border-gray-700 ml-1 pt-2 pb-1">
-                {/* 网格线间隔选项 */}
-                <div className="flex flex-col space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    网格线间隔 (每 N 格画一条线)
-                  </label>
-                  <div className="flex items-center justify-between space-x-3">
-                    <input 
-                      type="range" 
-                      min="5" 
-                      max="20" 
+            </section>
+
+            <section className="download-panel-card space-y-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-sm font-medium">显示网格线</div>
+                  <div className="mt-1 text-xs text-white/42">按间隔加粗辅助线，方便拼豆定位</div>
+                </div>
+                <Toggle checked={tempOptions.showGrid} onChange={checked => handleOptionChange('showGrid', checked)} />
+              </div>
+
+              {tempOptions.showGrid && (
+                <div className="grid gap-5 border-l border-white/14 pl-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <label className="block space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-white/82">网格线间隔</span>
+                      <span className="tabular-nums text-white">{tempOptions.gridInterval}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="20"
                       step="1"
                       value={tempOptions.gridInterval}
-                      onChange={(e) => handleOptionChange('gridInterval', parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                      onChange={event => handleOptionChange('gridInterval', Number(event.target.value))}
+                      className="w-full accent-[rgb(var(--accent-rgb))]"
                     />
-                    <span className="flex items-center justify-center min-w-[40px] text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {tempOptions.gridInterval}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 网格线颜色选择 */}
-                <div className="flex flex-col space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    网格线颜色
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {gridLineColorOptions.map(colorOpt => (
-                      <button
-                        key={colorOpt.value}
-                        type="button"
-                        onClick={() => handleOptionChange('gridLineColor', colorOpt.value)}
-                        className={`w-8 h-8 rounded-full border-2 transition-all duration-150 flex items-center justify-center 
-                                    ${tempOptions.gridLineColor === colorOpt.value 
-                                      ? 'border-blue-500 ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-gray-800' 
-                                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'}`}
-                        title={colorOpt.name}
-                      >
-                        <span 
-                          className="block w-6 h-6 rounded-full"
-                          style={{ backgroundColor: colorOpt.value }}
-                        ></span>
-                      </button>
-                    ))}
+
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium text-white/82">网格线颜色</div>
+                    <div className="flex flex-wrap gap-2">
+                      {gridLineColorOptions.map(colorOpt => (
+                        <button
+                          key={colorOpt.value}
+                          type="button"
+                          onClick={() => handleOptionChange('gridLineColor', colorOpt.value)}
+                          className={`grid h-10 w-10 place-items-center rounded-full border transition ${
+                            tempOptions.gridLineColor === colorOpt.value
+                              ? 'border-[rgba(var(--accent-rgb),0.72)] ring-2 ring-[rgba(var(--accent-rgb),0.36)]'
+                              : 'border-white/16 hover:border-white/36'
+                          }`}
+                          title={colorOpt.name}
+                        >
+                          <span className="h-7 w-7 rounded-full border border-white/30" style={{ backgroundColor: colorOpt.value }} />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            {/* 显示坐标选项 */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                显示坐标数字
-              </label>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer"
-                  checked={tempOptions.showCoordinates}
-                  onChange={(e) => handleOptionChange('showCoordinates', e.target.checked)}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
+              )}
+            </section>
 
-            {/* 隐藏格内色号选项 */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                隐藏格内色号
-              </label>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer"
-                  checked={!tempOptions.showCellNumbers}
-                  onChange={(e) => handleOptionChange('showCellNumbers', !e.target.checked)}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-            
-            {/* 添加: 包含色号统计选项 */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                包含色号统计
-              </label>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer"
-                  checked={tempOptions.includeStats}
-                  onChange={(e) => handleOptionChange('includeStats', e.target.checked)}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-
-            {/* 新增: 导出CSV hex数据选项 */}
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                  同时导出源数据
-                </label>
-                <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  导出hex颜色值的CSV文件，可用于重新导入
-                </span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer"
-                  checked={tempOptions.exportCsv}
-                  onChange={(e) => handleOptionChange('exportCsv', e.target.checked)}
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
+            <section className="download-panel-card grid gap-4 sm:grid-cols-2">
+              {[
+                ['显示坐标数字', 'showCoordinates', '在上下左右显示格子坐标'],
+                ['隐藏格内色号', 'showCellNumbers', '只导出纯像素色块', true],
+                ['包含色号统计', 'includeStats', '在图纸下方追加采购清单'],
+                ['水平镜像', 'horizontalMirror', '适合反面烫片或翻面制作'],
+                ['添加水印', 'addWatermark', '在图纸中写入工具名和署名'],
+                ['同时导出源数据', 'exportCsv', '导出 hex CSV，可重新导入'],
+              ].map(([label, key, helper, inverted]) => {
+                const optionKey = key as keyof GridDownloadOptions;
+                const checked = Boolean(inverted ? !tempOptions[optionKey] : tempOptions[optionKey]);
+                return (
+                  <div key={String(key)} className="flex items-center justify-between gap-4 rounded-xl border border-white/8 bg-white/[0.045] px-3 py-3">
+                    <div>
+                      <div className="text-sm font-medium">{label}</div>
+                      <div className="mt-1 text-xs text-white/42">{helper}</div>
+                    </div>
+                    <Toggle
+                      checked={checked}
+                      onChange={nextChecked => handleOptionChange(optionKey, inverted ? !nextChecked : nextChecked)}
+                    />
+                  </div>
+                );
+              })}
+            </section>
           </div>
-          
-          <div className="flex justify-end mt-6 space-x-3">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg transition-colors"
-            >
-              取消
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
-            >
-              下载图纸
-            </button>
+
+          <div className="flex flex-wrap justify-end gap-2 border-t border-white/10 px-6 py-4">
+            <button type="button" onClick={onClose} className="palette-footer-button">取消</button>
+            <button type="button" onClick={handleSave} className="palette-save-button">下载图纸</button>
           </div>
         </div>
       </div>
@@ -227,4 +200,4 @@ const DownloadSettingsModal: React.FC<DownloadSettingsModalProps> = ({
 };
 
 export default DownloadSettingsModal;
-export { gridLineColorOptions }; 
+export { gridLineColorOptions };

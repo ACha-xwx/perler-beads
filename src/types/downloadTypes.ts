@@ -7,4 +7,7 @@ export type GridDownloadOptions = {
   gridLineColor: string;
   includeStats: boolean;
   exportCsv: boolean; // 新增：是否同时导出CSV hex数据
+  authorName: string;
+  horizontalMirror: boolean;
+  addWatermark: boolean;
 };

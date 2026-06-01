@@ -1,25 +1,10 @@
-# 进度日志
+# 进度记录
 
-## 2026-06-01
+## 2026-06-02
 
-### 已完成
-- 切回 `origins/index.html` 作为正确视觉基线。
-- 清理右侧公开运营内容：留言板、素材隐私声明、社区与支持等不再出现在主页面。
-- 项目名改为 `BeadForge`，同步到页面、manifest、导出图纸和完成卡片。
-- 新增外观设置：主题、字体、缩放，默认 `Ink wash` 黑白浅色主题。
-- 新增自用工具：保存草稿、恢复草稿、复制采购清单。
-- 按钮与面板改为轻量毛玻璃风格。
-- 加入页面进入、按钮扫光、背景网格漂移、拼豆浮动等动效，并支持 `prefers-reduced-motion`。
-- 修正右上角 `MARD 291` 内部文字为居中对齐。
-- 删除未使用的打赏弹窗组件和旧二维码 public 资产。
-
-### 验证
-| 检查项 | 结果 |
-|------|------|
-| `npm run build` | 通过 |
-| `http://localhost:3000/` 本机请求 | 200 |
-| 本机 Chrome 截图检查 | 通过 |
-| 内置浏览器访问 localhost | 失败，判断为插件 loopback 隔离，不影响本机服务 |
-
-### 注意
-- `public/sw.js` 由 `next-pwa` 在构建时生成，构建后已跟随 public 资产变化更新。
+- 修复图片上传后停在“导入中”的问题：`pixelateImage` 不再依赖首次渲染前不存在的 `pixelatedCanvasRef`，并增加导入失败 toast。
+- 用户验证上传已成功，但发现预览图被压扁。
+- 修复预览图比例：`src/components/PixelatedPreviewCanvas.tsx` 新增按 `gridDimensions` 计算 canvas 真实尺寸，避免默认 `300 x 150` 拉伸。
+- `npm run build` 通过。仅有 Browserslist 数据过旧提示。
+- 用户指出当前实现遗漏了旧站大量编辑页面功能，要求重新查看 `origins/` 源码。
+- 已创建文件规划：`task_plan.md`、`findings.md`、`progress.md`。

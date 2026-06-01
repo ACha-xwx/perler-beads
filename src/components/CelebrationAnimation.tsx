@@ -7,7 +7,7 @@ interface CelebrationAnimationProps {
 
 interface Particle {
   id: number;
-  emoji: string;
+  shape: 'square' | 'circle' | 'bar';
   x: number;
   y: number;
   vx: number;
@@ -16,7 +16,7 @@ interface Particle {
   rotationSpeed: number;
   scale: number;
   opacity: number;
-  color?: string;
+  color: string;
 }
 
 const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
@@ -24,54 +24,31 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
   onComplete
 }) => {
   const [particles, setParticles] = useState<Particle[]>([]);
-  const [confetti, setConfetti] = useState<Particle[]>([]);
 
   useEffect(() => {
     if (!isVisible) return;
 
-    // emoji和彩带选项
-    const celebrationEmojis = ['🎉', '🎊', '✨', '🌟', '💫', '🎈', '🎁', '🏆'];
-    const confettiColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+    const confettiColors = ['#111111', '#6f6f67', '#d86242', '#2f6f5f', '#3e73b8', '#7d5ac7', '#dfb84f'];
 
-    // 创建emoji粒子
     const newParticles: Particle[] = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 76; i++) {
       const isFromLeft = Math.random() < 0.5;
       newParticles.push({
         id: Date.now() + i,
-        emoji: celebrationEmojis[Math.floor(Math.random() * celebrationEmojis.length)],
+        shape: i % 5 === 0 ? 'circle' : i % 3 === 0 ? 'bar' : 'square',
         x: isFromLeft ? -50 : window.innerWidth + 50,
         y: Math.random() * window.innerHeight * 0.6 + window.innerHeight * 0.2,
-        vx: (isFromLeft ? 1 : -1) * (Math.random() * 3 + 2),
-        vy: (Math.random() - 0.5) * 4,
-        rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 10,
-        scale: Math.random() * 0.5 + 0.8,
-        opacity: 1
-      });
-    }
-
-    // 创建彩带粒子
-    const newConfetti: Particle[] = [];
-    for (let i = 0; i < 40; i++) {
-      const isFromLeft = Math.random() < 0.5;
-      newConfetti.push({
-        id: Date.now() + i + 1000,
-        emoji: '',
-        x: isFromLeft ? -20 : window.innerWidth + 20,
-        y: Math.random() * window.innerHeight * 0.4 + window.innerHeight * 0.1,
         vx: (isFromLeft ? 1 : -1) * (Math.random() * 4 + 3),
-        vy: Math.random() * 2 - 1,
+        vy: (Math.random() - 0.5) * 3,
         rotation: Math.random() * 360,
-        rotationSpeed: (Math.random() - 0.5) * 15,
-        scale: Math.random() * 0.3 + 0.2,
+        rotationSpeed: (Math.random() - 0.5) * 16,
+        scale: Math.random() * 0.8 + 0.6,
         opacity: 1,
         color: confettiColors[Math.floor(Math.random() * confettiColors.length)]
       });
     }
 
     setParticles(newParticles);
-    setConfetti(newConfetti);
 
     // 动画循环
     let animationId: number;
@@ -81,26 +58,12 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
         x: particle.x + particle.vx,
         y: particle.y + particle.vy,
         rotation: particle.rotation + particle.rotationSpeed,
-        opacity: Math.max(0, particle.opacity - 0.02),
-        vy: particle.vy + 0.1 // 重力效果
+        opacity: Math.max(0, particle.opacity - 0.016),
+        vy: particle.vy + 0.08
       })).filter(particle => 
         particle.x > -100 && 
         particle.x < window.innerWidth + 100 && 
         particle.y < window.innerHeight + 100 &&
-        particle.opacity > 0
-      ));
-
-      setConfetti(prev => prev.map(particle => ({
-        ...particle,
-        x: particle.x + particle.vx,
-        y: particle.y + particle.vy,
-        rotation: particle.rotation + particle.rotationSpeed,
-        opacity: Math.max(0, particle.opacity - 0.015),
-        vy: particle.vy + 0.08 // 稍微轻一点的重力
-      })).filter(particle => 
-        particle.x > -50 && 
-        particle.x < window.innerWidth + 50 && 
-        particle.y < window.innerHeight + 50 &&
         particle.opacity > 0
       ));
 
@@ -112,9 +75,8 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
     // 1.5秒后清理动画
     const timer = setTimeout(() => {
       setParticles([]);
-      setConfetti([]);
       onComplete();
-    }, 1500);
+    }, 1700);
 
     return () => {
       cancelAnimationFrame(animationId);
@@ -126,54 +88,31 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
-      {/* Emoji 粒子 */}
       {particles.map(particle => (
         <div
           key={particle.id}
-          className="absolute text-2xl select-none"
+          className="absolute select-none shadow-[0_0_18px_rgba(255,255,255,0.42)]"
           style={{
             left: `${particle.x}px`,
             top: `${particle.y}px`,
-            transform: `rotate(${particle.rotation}deg) scale(${particle.scale})`,
-            opacity: particle.opacity,
-            fontSize: '24px'
-          }}
-        >
-          {particle.emoji}
-        </div>
-      ))}
-
-      {/* 彩带粒子 */}
-      {confetti.map(particle => (
-        <div
-          key={particle.id}
-          className="absolute"
-          style={{
-            left: `${particle.x}px`,
-            top: `${particle.y}px`,
-            width: '6px',
-            height: '12px',
+            width: particle.shape === 'bar' ? '5px' : '10px',
+            height: particle.shape === 'bar' ? '24px' : '10px',
+            borderRadius: particle.shape === 'circle' ? '999px' : '2px',
             backgroundColor: particle.color,
             transform: `rotate(${particle.rotation}deg) scale(${particle.scale})`,
             opacity: particle.opacity,
-            borderRadius: '1px'
           }}
         />
       ))}
 
       {/* 中央庆祝文字 */}
       <div 
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center animate-bounce"
-        style={{
-          animationDuration: '0.6s',
-          animationTimingFunction: 'ease-out',
-          animationFillMode: 'both'
-        }}
+        className="completion-modal settings-shell absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[22px] px-8 py-6 text-center"
       >
-        <div className="text-4xl font-bold text-yellow-400 drop-shadow-lg animate-pulse">
-          🎉完成🎉
+        <div className="text-3xl font-black text-[rgb(var(--accent-rgb))]">
+          完成
         </div>
-        <div className="text-lg text-white drop-shadow-md mt-2">
+        <div className="mt-2 text-sm text-[var(--muted)]">
           这个颜色拼完了！
         </div>
       </div>
@@ -181,4 +120,4 @@ const CelebrationAnimation: React.FC<CelebrationAnimationProps> = ({
   );
 };
 
-export default CelebrationAnimation; 
+export default CelebrationAnimation;

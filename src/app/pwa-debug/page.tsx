@@ -121,7 +121,7 @@ export default function PWADebug() {
             <div className="space-y-2 text-gray-600 dark:text-gray-300">
               <p><strong>iOS Safari:</strong></p>
               <ol className="list-decimal list-inside ml-4">
-                <li>点击分享按钮（方框带向上箭头）</li>
+                <li>点击浏览器底部工具栏里的方框上箭头按钮</li>
                 <li>选择&ldquo;添加到主屏幕&rdquo;</li>
                 <li>点击&ldquo;添加&rdquo;</li>
               </ol>

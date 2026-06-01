@@ -16,11 +16,13 @@ const ToolBar: React.FC<ToolBarProps> = ({
   elapsedTime
 }) => {
   return (
-    <div className="h-15 bg-white border-t border-gray-200 px-4 py-2 flex items-center justify-around">
+    <div className="border-t border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.76)] px-3 py-2 backdrop-blur-xl">
+      <div className="mx-auto grid max-w-md grid-cols-3 gap-2">
       {/* 颜色选择 */}
       <button
         onClick={onColorSelect}
-        className="flex flex-col items-center space-y-1 text-gray-600 hover:text-blue-600 transition-colors"
+        className="glass-action flex min-h-[48px] flex-col items-center justify-center gap-0.5 px-3 text-[var(--text)]"
+        aria-label="选择颜色"
       >
         <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
           <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a3 3 0 106 0V4a2 2 0 00-2-2H4zm1 14a1 1 0 100-2 1 1 0 000 2zm5-1.757l4.9-4.9a2 2 0 000-2.828L13.485 5.1a2 2 0 00-2.828 0L10 5.757v8.486zM16 18H9.071l6-6H16a2 2 0 012 2v2a2 2 0 01-2 2z" clipRule="evenodd" />
@@ -31,7 +33,8 @@ const ToolBar: React.FC<ToolBarProps> = ({
       {/* 定位 */}
       <button
         onClick={onLocate}
-        className="flex flex-col items-center space-y-1 text-gray-600 hover:text-green-600 transition-colors"
+        className="glass-action flex min-h-[48px] flex-col items-center justify-center gap-0.5 px-3 text-[var(--text)]"
+        aria-label="定位推荐区域"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -43,11 +46,8 @@ const ToolBar: React.FC<ToolBarProps> = ({
       {/* 计时器/暂停 */}
       <button
         onClick={onPause}
-        className={`flex flex-col items-center space-y-1 transition-colors ${
-          isPaused 
-            ? 'text-green-600 hover:text-green-700' 
-            : 'text-red-600 hover:text-red-700'
-        }`}
+        className={`glass-action flex min-h-[48px] flex-col items-center justify-center gap-0.5 px-3 ${isPaused ? 'glass-action-active' : ''}`}
+        aria-label={isPaused ? '继续计时' : '暂停计时'}
       >
         {isPaused ? (
           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -58,8 +58,9 @@ const ToolBar: React.FC<ToolBarProps> = ({
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
         )}
-        <span className="text-xs font-mono">{elapsedTime}</span>
+        <span className="text-xs font-semibold tabular-nums">{elapsedTime}</span>
       </button>
+      </div>
     </div>
   );
 };
