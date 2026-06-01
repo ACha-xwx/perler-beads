@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { APP_NAME, APP_TAGLINE } from "../config/brand";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "七卡瓦拼豆底稿生成器 | Perler Beads Generator",
-  description: "上传图片，调整精细度，一键生成像素画图纸，简单实用的像素画生成工具",
+  title: `${APP_NAME} | ${APP_TAGLINE}`,
+  description: "上传图片，调整精细度，一键生成拼豆图纸和采购清单。",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "拼豆生成器",
+    title: APP_NAME,
   },
   icons: {
     icon: [
@@ -34,11 +35,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#f8f8f5",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({
@@ -49,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden bg-gray-50 text-gray-900`}
       >
         {children}
         <Analytics />

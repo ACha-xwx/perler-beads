@@ -1,11 +1,11 @@
 {
-  "name": "七卡瓦拼豆底稿生成器",
-  "short_name": "七卡瓦",
-  "description": "七卡瓦拼豆底稿生成器，让你轻松制作精美的像素画作品",
+  "name": "BeadForge",
+  "short_name": "BeadForge",
+  "description": "A personal perler beads pattern generator for images, palettes, drafts, and shopping lists.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#E8F4FD",
-  "theme_color": "#5CA4F5",
+  "background_color": "#F8F8F5",
+  "theme_color": "#202220",
   "orientation": "portrait-primary",
   "icons": [
     {
