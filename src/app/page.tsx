@@ -242,7 +242,7 @@ const floatAnimation = `
   .editor-tool-rail {
     animation: railSlideIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.3) transparent;
+    scrollbar-color: rgba(var(--line-rgb),0.38) transparent;
   }
 
   .editor-side-panel {
@@ -255,22 +255,21 @@ const floatAnimation = `
     position: relative;
     overflow: hidden;
     border-radius: 16px;
-    border: 1px solid rgba(255,255,255,0.11);
+    border: 1px solid rgba(var(--line-rgb),0.16);
     background:
-      linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035)),
-      rgba(255,255,255,0.045);
+      radial-gradient(circle at 12% 0%, rgba(var(--accent-rgb),0.09), transparent 42%),
+      linear-gradient(135deg, rgba(255,255,255,0.82), rgba(255,255,255,0.46)),
+      rgba(var(--panel-rgb),0.72);
+    color: var(--text);
     padding: 14px;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 14px 32px rgba(0,0,0,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.74), 0 18px 44px rgba(var(--shadow-rgb),0.11);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
     animation: cardLiftIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .settings-panel-card {
-    border-color: rgba(var(--line-rgb),0.16);
-    background:
-      linear-gradient(135deg, rgba(255,255,255,0.82), rgba(255,255,255,0.48)),
-      rgba(var(--panel-rgb),0.72);
-    color: var(--text);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.76), 0 18px 44px rgba(var(--shadow-rgb),0.11);
+    border-color: rgba(var(--line-rgb),0.18);
   }
 
   .settings-shell {
@@ -342,12 +341,12 @@ const floatAnimation = `
 
   .editor-color-swatch:hover {
     transform: translateY(-2px) scale(1.04);
-    border-color: rgba(255,255,255,0.78);
+    border-color: rgba(var(--accent-rgb),0.58);
   }
 
   .editor-color-swatch-selected {
-    border-color: rgba(255,255,255,0.96);
-    box-shadow: 0 0 0 2px rgba(var(--accent-rgb),0.58), 0 10px 20px rgba(0,0,0,0.2);
+    border-color: rgba(var(--accent-rgb),0.82);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb),0.36), 0 10px 20px rgba(var(--shadow-rgb),0.16);
   }
 
   .editor-side-panel button,
@@ -379,12 +378,14 @@ const floatAnimation = `
   .palette-lab {
     --palette-accent: rgb(var(--accent-rgb));
     --palette-accent-2: rgb(var(--accent-2-rgb));
+    color: var(--text);
   }
 
   .palette-lab-head {
     background:
-      radial-gradient(circle at 12% 0%, rgba(var(--accent-rgb), 0.22), transparent 34%),
-      linear-gradient(135deg, rgba(255,255,255,0.06), transparent);
+      radial-gradient(circle at 12% 0%, rgba(var(--accent-rgb), 0.14), transparent 34%),
+      linear-gradient(90deg, rgba(var(--accent-rgb),0.08), rgba(var(--accent-2-rgb),0.05)),
+      rgba(255,255,255,0.36);
   }
 
   .palette-icon-button,
@@ -404,9 +405,9 @@ const floatAnimation = `
     min-width: 42px;
     min-height: 42px;
     border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.05);
-    color: rgba(255,255,255,0.72);
+    border: 1px solid rgba(var(--line-rgb),0.18);
+    background: rgba(255,255,255,0.54);
+    color: var(--muted);
     transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease, color 160ms ease;
   }
 
@@ -416,14 +417,14 @@ const floatAnimation = `
     transform: translateY(-1px);
     border-color: rgba(var(--accent-rgb), 0.55);
     background: rgba(var(--accent-rgb), 0.18);
-    color: white;
+    color: rgb(var(--accent-rgb));
   }
 
   .palette-tab {
     min-height: 36px;
     border-radius: 10px;
     padding: 0 16px;
-    color: rgba(255,255,255,0.62);
+    color: var(--muted);
     font-size: 12px;
     font-weight: 700;
     transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, color 160ms ease;
@@ -431,19 +432,19 @@ const floatAnimation = `
 
   .palette-tab:hover {
     transform: translateY(-1px);
-    color: white;
-    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    background: rgba(var(--accent-rgb),0.08);
   }
 
   .palette-tab-active {
-    background: rgba(248,244,232,0.92);
-    color: #1b1814;
+    background: rgba(var(--accent-rgb),0.14);
+    color: rgb(var(--accent-rgb));
     animation: paletteTabPop 230ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .palette-series-list,
   .palette-color-scroll {
-    scrollbar-color: rgba(255,255,255,0.48) rgba(255,255,255,0.08);
+    scrollbar-color: rgba(var(--line-rgb),0.42) rgba(var(--line-rgb),0.08);
   }
 
   .palette-series-button {
@@ -455,21 +456,21 @@ const floatAnimation = `
     min-height: 38px;
     border-radius: 12px;
     padding: 0 12px;
-    color: rgba(255,255,255,0.66);
+    color: var(--muted);
     font-size: 12px;
     transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, color 160ms ease;
   }
 
   .palette-series-button:hover {
     transform: translateX(2px);
-    color: white;
-    background: rgba(255,255,255,0.07);
+    color: var(--text);
+    background: rgba(var(--accent-rgb),0.08);
   }
 
   .palette-series-button-active {
-    color: #191815;
-    background: rgba(248,244,232,0.92);
-    box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+    color: rgb(var(--accent-rgb));
+    background: rgba(var(--accent-rgb),0.14);
+    box-shadow: 0 10px 24px rgba(var(--shadow-rgb),0.1);
   }
 
   .palette-grid {
@@ -492,10 +493,10 @@ const floatAnimation = `
     min-height: 48px;
     overflow: hidden;
     border-radius: 10px;
-    border: 2px solid rgba(255,255,255,0.18);
+    border: 2px solid rgba(0,0,0,0.12);
     background: var(--cell-color);
     color: rgba(20,20,18,0.74);
-    box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+    box-shadow: none;
     animation: paletteCellIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
     animation-delay: min(calc(var(--cell-index) * 12ms), 260ms);
     transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms ease, box-shadow 160ms ease;
@@ -507,8 +508,8 @@ const floatAnimation = `
 
   .palette-color-cell:hover {
     transform: translateY(-3px) scale(1.035);
-    border-color: rgba(255,255,255,0.9);
-    box-shadow: 0 16px 28px rgba(0,0,0,0.28);
+    border-color: rgba(var(--accent-rgb),0.58);
+    box-shadow: 0 12px 20px rgba(var(--shadow-rgb),0.12);
   }
 
   .palette-color-cell:hover::before {
@@ -516,8 +517,8 @@ const floatAnimation = `
   }
 
   .palette-color-cell-selected {
-    border-color: rgba(255,255,255,0.96);
-    box-shadow: 0 0 0 2px rgba(var(--accent-rgb),0.52), 0 16px 30px rgba(0,0,0,0.3);
+    border-color: rgba(var(--accent-rgb),0.86);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb),0.32), 0 12px 22px rgba(var(--shadow-rgb),0.14);
   }
 
   .palette-color-fill {
@@ -573,17 +574,18 @@ const floatAnimation = `
   .palette-save-button {
     min-height: 38px;
     border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.14);
+    border: 1px solid rgba(var(--line-rgb),0.18);
     padding: 0 14px;
-    color: rgba(255,255,255,0.82);
+    background: rgba(255,255,255,0.54);
+    color: var(--text);
     font-size: 12px;
     transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease;
   }
 
   .palette-footer-button:hover {
     transform: translateY(-1px);
-    border-color: rgba(255,255,255,0.28);
-    background: rgba(255,255,255,0.08);
+    border-color: rgba(var(--accent-rgb),0.42);
+    background: rgba(var(--accent-rgb),0.08);
   }
 
   .palette-save-button {
@@ -3533,7 +3535,7 @@ export default function Home() {
 
       {toastMessage && (
         <div
-          className="fixed bottom-20 left-1/2 z-[200] -translate-x-1/2 whitespace-nowrap rounded-xl bg-gray-900 px-4 py-2 text-sm text-white shadow-lg"
+          className="settings-shell fixed bottom-20 left-1/2 z-[200] -translate-x-1/2 whitespace-nowrap rounded-xl px-4 py-2 text-sm"
           style={{ animation: 'toastFadeInOut 2s ease-in-out' }}
         >
           {toastMessage}

@@ -18,7 +18,7 @@ const GridTooltip: React.FC<GridTooltipProps> = ({ tooltipData, selectedColorSys
 
   return (
     <div
-      className="absolute bg-gray-800 text-white text-xs px-2 py-1 rounded shadow-lg pointer-events-none flex items-center space-x-1.5 z-50"
+      className="pointer-events-none absolute z-50 flex items-center space-x-1.5 rounded-lg border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.88)] px-2.5 py-1.5 text-xs text-[var(--text)] shadow-[0_14px_32px_rgba(var(--shadow-rgb),0.14)] backdrop-blur-xl"
       style={{
         left: `${tooltipData.x}px`, 
         top: `${tooltipData.y - 25}px`, // 向上偏移，使提示框显示在鼠标上方
@@ -27,7 +27,7 @@ const GridTooltip: React.FC<GridTooltipProps> = ({ tooltipData, selectedColorSys
       }}
     >
       <span
-        className="inline-block w-3 h-3 rounded-sm border border-gray-400 dark:border-gray-500 flex-shrink-0"
+        className="inline-block h-3 w-3 flex-shrink-0 rounded-sm border border-black/15"
         style={{ backgroundColor: tooltipData.color }}
       ></span>
       <span className="font-mono font-semibold">{getDisplayColorKey(tooltipData.color, selectedColorSystem)}</span>
@@ -35,4 +35,4 @@ const GridTooltip: React.FC<GridTooltipProps> = ({ tooltipData, selectedColorSys
   );
 };
 
-export default GridTooltip; 
+export default GridTooltip;

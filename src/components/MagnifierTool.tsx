@@ -284,7 +284,7 @@ const MagnifierTool: React.FC<MagnifierToolProps> = ({
     <>
       {/* 选择区域提示 */}
       {!selectionArea && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-[70]">
+        <div className="settings-shell fixed left-1/2 top-4 z-[70] -translate-x-1/2 rounded-xl px-4 py-2 text-[var(--text)]">
           <div className="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -298,7 +298,7 @@ const MagnifierTool: React.FC<MagnifierToolProps> = ({
       {selectionArea && (
         <div
           ref={magnifierRef}
-          className={`fixed bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-600 select-none ${
+          className={`settings-shell fixed select-none overflow-hidden rounded-xl ${
             isFloatingActive ? 'z-[60]' : 'z-[50]'
           }`}
           style={{
@@ -309,7 +309,7 @@ const MagnifierTool: React.FC<MagnifierToolProps> = ({
         >
           {/* 标题栏 */}
           <div 
-            className="flex items-center justify-between p-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-t-xl cursor-move"
+            className="settings-head flex cursor-move items-center justify-between border-b border-[rgba(var(--line-rgb),0.16)] p-3 text-[var(--text)]"
             onMouseDown={handleTitleBarMouseDown}
             onTouchStart={handleTitleBarTouchStart}
           >
@@ -324,7 +324,7 @@ const MagnifierTool: React.FC<MagnifierToolProps> = ({
               {/* 重新选择按钮 */}
               <button
                 onClick={onClearSelection}
-                className="p-1 hover:bg-white/20 rounded transition-colors"
+                className="rounded p-1 text-[var(--muted)] transition-colors hover:bg-[rgba(var(--accent-rgb),0.08)] hover:text-[var(--text)]"
                 title="重新选择区域"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -335,7 +335,7 @@ const MagnifierTool: React.FC<MagnifierToolProps> = ({
               {/* 关闭按钮 */}
               <button
                 onClick={onToggle}
-                className="p-1 hover:bg-white/20 rounded transition-colors"
+                className="rounded p-1 text-[var(--muted)] transition-colors hover:bg-[rgba(var(--accent-rgb),0.08)] hover:text-[var(--text)]"
                 title="关闭放大镜"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -347,7 +347,7 @@ const MagnifierTool: React.FC<MagnifierToolProps> = ({
 
           {/* 放大视图内容 */}
           <div className="p-3">
-            <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-auto max-h-96">
+            <div className="max-h-96 overflow-auto rounded-lg border border-[rgba(var(--line-rgb),0.18)] bg-white/64">
               <canvas
                 ref={canvasRef}
                 onClick={handleMagnifiedClick}
@@ -357,13 +357,13 @@ const MagnifierTool: React.FC<MagnifierToolProps> = ({
             
             {/* 当前选中颜色信息 */}
             {selectedColor && (
-              <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+              <div className="mt-2 rounded-lg border border-[rgba(var(--line-rgb),0.14)] bg-white/54 p-2">
                 <div className="flex items-center gap-2 text-xs">
                   <div
-                    className="w-4 h-4 rounded border border-gray-300 dark:border-gray-500"
+                    className="h-4 w-4 rounded border border-black/15"
                     style={{ backgroundColor: selectedColor.color }}
                   ></div>
-                  <span className="text-gray-700 dark:text-gray-300">
+                  <span className="text-[var(--muted)]">
                     当前: {getColorKeyByHex(selectedColor.color, selectedColorSystem)}
                   </span>
                 </div>
@@ -376,4 +376,4 @@ const MagnifierTool: React.FC<MagnifierToolProps> = ({
   );
 };
 
-export default MagnifierTool; 
+export default MagnifierTool;

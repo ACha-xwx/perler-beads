@@ -171,9 +171,9 @@ const SizeControl = ({
   onChange: (value: number) => void;
 }) => (
   <label className="block space-y-2">
-    <div className="flex items-center justify-between text-xs text-white/70">
+    <div className="flex items-center justify-between text-xs text-[var(--muted)]">
       <span className="font-medium">{label}</span>
-      <span className="tabular-nums text-white">{value}</span>
+      <span className="tabular-nums text-[var(--text)]">{value}</span>
     </div>
     <input
       type="range"
@@ -201,7 +201,7 @@ const ToggleButton = ({
     className={`rounded-lg border px-2 py-2 text-xs ${
       checked
         ? 'border-[rgba(var(--accent-rgb),0.72)] bg-[rgb(var(--accent-rgb))] text-white'
-        : 'border-white/12 bg-white/7 text-white/72 hover:bg-white/14'
+        : 'border-[rgba(var(--line-rgb),0.16)] bg-white/55 text-[var(--muted)] hover:border-[rgba(var(--accent-rgb),0.38)] hover:bg-[rgba(var(--accent-rgb),0.08)] hover:text-[var(--text)]'
     }`}
     aria-pressed={checked}
   >
@@ -220,18 +220,18 @@ export function EditorToolRail({
   const displayKey = displayColor ? getColorKeyByHex(displayColor.color, selectedColorSystem) : 'T01';
 
   return (
-    <div className="editor-tool-rail absolute left-3 top-1/2 z-30 flex max-h-[calc(100%-1.5rem)] -translate-y-1/2 flex-col items-center gap-1 overflow-y-auto rounded-2xl border border-gray-700/40 bg-gray-900/88 p-1.5 shadow-2xl backdrop-blur-xl">
+    <div className="editor-tool-rail absolute left-3 top-1/2 z-30 flex max-h-[calc(100%-1.5rem)] -translate-y-1/2 flex-col items-center gap-1 overflow-y-auto rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.78)] p-1.5 shadow-[0_18px_44px_rgba(var(--shadow-rgb),0.16)] backdrop-blur-xl">
       <button
         type="button"
         onClick={() => onToolChange('palette')}
         className="mb-1 flex flex-shrink-0 cursor-pointer flex-col items-center gap-0.5"
         aria-label="切换色板"
       >
-        <span className="h-9 w-9 rounded-lg border-2 border-gray-500/50" style={{ backgroundColor: displayColor?.color || '#FFFFFF' }} />
-        <span className="max-w-[40px] truncate font-mono text-[9px] leading-none text-gray-400">{displayKey}</span>
+        <span className="h-9 w-9 rounded-lg border-2 border-[rgba(var(--line-rgb),0.28)]" style={{ backgroundColor: displayColor?.color || '#FFFFFF' }} />
+        <span className="max-w-[40px] truncate font-mono text-[9px] leading-none text-[var(--muted)]">{displayKey}</span>
       </button>
 
-      <div className="h-px w-7 flex-shrink-0 bg-gray-600/40" />
+      <div className="h-px w-7 flex-shrink-0 bg-[rgba(var(--line-rgb),0.24)]" />
 
       {toolItems.map(item => (
         <button
@@ -241,7 +241,7 @@ export function EditorToolRail({
           className={`grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl transition-all duration-200 ${
             activeTool === item.key
               ? 'scale-110 bg-[rgb(var(--accent-rgb))] text-white shadow-lg shadow-[rgba(var(--accent-rgb),0.3)]'
-              : 'text-gray-400 hover:bg-gray-700/60 hover:text-gray-50 active:scale-95'
+              : 'text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.1)] hover:text-[var(--text)] active:scale-95'
           }`}
           title={item.label}
           aria-label={item.label}
@@ -307,20 +307,20 @@ export function EditorSidePanel({
   }[activeTool];
 
   return (
-    <aside className="editor-side-panel absolute inset-y-0 right-0 z-30 flex w-full max-w-[340px] flex-col border-l border-white/10 bg-[#181715]/96 text-[#f7f2e9] shadow-[-24px_0_60px_rgba(0,0,0,0.18)] backdrop-blur-2xl lg:w-[320px]">
+    <aside className="editor-side-panel absolute inset-y-0 right-0 z-30 flex w-full max-w-[340px] flex-col border-l border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.84)] text-[var(--text)] shadow-[-24px_0_60px_rgba(var(--shadow-rgb),0.14)] backdrop-blur-2xl lg:w-[320px]">
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
         <PanelCard>
           <div className="mb-3 flex items-center justify-between">
             <div className="text-sm font-bold">{activeToolName}</div>
             {(pendingLineStart || pendingRectangleStart) && (
-              <button type="button" onClick={onCancelPendingShape} className="rounded-lg border border-white/12 px-2 py-1 text-[11px] text-white/60 hover:bg-white/10">
+              <button type="button" onClick={onCancelPendingShape} className="rounded-lg border border-[rgba(var(--line-rgb),0.16)] px-2 py-1 text-[11px] text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]">
                 取消起点
               </button>
             )}
           </div>
 
-          {activeTool === 'pan' && <p className="text-xs leading-6 text-white/46">拖动画布区域可以平移视图。滚动条也可以直接用于移动大尺寸图纸。</p>}
-          {activeTool === 'palette' && <p className="text-xs leading-6 text-white/46">在下方色板中选择当前画笔颜色。</p>}
+          {activeTool === 'pan' && <p className="text-xs leading-6 text-[var(--muted)]">拖动画布区域可以平移视图。滚动条也可以直接用于移动大尺寸图纸。</p>}
+          {activeTool === 'palette' && <p className="text-xs leading-6 text-[var(--muted)]">在下方色板中选择当前画笔颜色。</p>}
           {activeTool === 'brush' && (
             <div className="space-y-3">
               <SizeControl label="笔刷大小" value={brushSize} onChange={onBrushSizeChange} />
@@ -333,18 +333,18 @@ export function EditorSidePanel({
           {activeTool === 'eraser' && (
             <div className="space-y-3">
               <SizeControl label="笔刷大小" value={eraserSize} onChange={onEraserSizeChange} />
-              <button type="button" onClick={onRegionErase} className="w-full rounded-lg border border-white/12 bg-white/10 px-3 py-2 text-xs text-white/82 hover:bg-white/14">
+              <button type="button" onClick={onRegionErase} className="w-full rounded-lg border border-[rgba(var(--line-rgb),0.16)] bg-white/55 px-3 py-2 text-xs text-[var(--text)] hover:border-[rgba(var(--accent-rgb),0.38)] hover:bg-[rgba(var(--accent-rgb),0.08)]">
                 区域擦除（同色连通）
               </button>
             </div>
           )}
-          {activeTool === 'eyedropper' && <p className="text-xs leading-6 text-white/46">在画布上点击拾取颜色，拾取后会自动切回画笔。</p>}
+          {activeTool === 'eyedropper' && <p className="text-xs leading-6 text-[var(--muted)]">在画布上点击拾取颜色，拾取后会自动切回画笔。</p>}
           {activeTool === 'fill' && (
             <div className="space-y-3">
-              <button type="button" onClick={onColorReplaceToggle} className="w-full rounded-lg border border-white/12 bg-white/10 px-3 py-2 text-xs text-white/82 hover:bg-white/14">
+              <button type="button" onClick={onColorReplaceToggle} className="w-full rounded-lg border border-[rgba(var(--line-rgb),0.16)] bg-white/55 px-3 py-2 text-xs text-[var(--text)] hover:border-[rgba(var(--accent-rgb),0.38)] hover:bg-[rgba(var(--accent-rgb),0.08)]">
                 {colorReplaceState.isActive ? (colorReplaceState.step === 'select-source' ? '点击画布选择源颜色' : '选择目标颜色') : '批量替换颜色'}
               </button>
-              <p className="text-xs leading-6 text-white/46">直接点击画布会填充同色连通区域；批量替换可把全图某个颜色替换为另一个颜色。</p>
+              <p className="text-xs leading-6 text-[var(--muted)]">直接点击画布会填充同色连通区域；批量替换可把全图某个颜色替换为另一个颜色。</p>
             </div>
           )}
           {activeTool === 'line' && (
@@ -354,7 +354,7 @@ export function EditorSidePanel({
                 <ToggleButton label="水平镜像" checked={lineMirrorX} onChange={onLineMirrorXChange} />
                 <ToggleButton label="垂直镜像" checked={lineMirrorY} onChange={onLineMirrorYChange} />
               </div>
-              <p className="text-xs leading-6 text-white/46">
+              <p className="text-xs leading-6 text-[var(--muted)]">
                 {pendingLineStart ? `已选起点 (${pendingLineStart.col + 1}, ${pendingLineStart.row + 1})，再点终点。` : '先点起点，再点终点绘制直线。'}
               </p>
             </div>
@@ -365,7 +365,7 @@ export function EditorSidePanel({
               <button
                 type="button"
                 onClick={() => onRectangleFilledChange(!rectangleFilled)}
-                className={`w-full rounded-lg border px-3 py-2 text-xs ${rectangleFilled ? 'border-[rgba(var(--accent-rgb),0.72)] bg-[rgb(var(--accent-rgb))] text-white' : 'border-white/12 bg-white/10 text-white/82 hover:bg-white/14'}`}
+                className={`w-full rounded-lg border px-3 py-2 text-xs ${rectangleFilled ? 'border-[rgba(var(--accent-rgb),0.72)] bg-[rgb(var(--accent-rgb))] text-white' : 'border-[rgba(var(--line-rgb),0.16)] bg-white/55 text-[var(--text)] hover:border-[rgba(var(--accent-rgb),0.38)] hover:bg-[rgba(var(--accent-rgb),0.08)]'}`}
               >
                 实心填充
               </button>
@@ -373,13 +373,13 @@ export function EditorSidePanel({
                 <ToggleButton label="水平镜像" checked={rectangleMirrorX} onChange={onRectangleMirrorXChange} />
                 <ToggleButton label="垂直镜像" checked={rectangleMirrorY} onChange={onRectangleMirrorYChange} />
               </div>
-              <p className="text-xs leading-6 text-white/46">
+              <p className="text-xs leading-6 text-[var(--muted)]">
                 {pendingRectangleStart ? `已选起点 (${pendingRectangleStart.col + 1}, ${pendingRectangleStart.row + 1})，再点对角。` : '先点一个角，再点对角绘制矩形。'}
               </p>
             </div>
           )}
           {activeTool === 'selection' && (
-            <div className="space-y-3 text-xs text-white/60">
+            <div className="space-y-3 text-xs text-[var(--muted)]">
               <div className="flex items-center justify-between">
                 <span>选区尺寸</span>
                 <span className="tabular-nums">
@@ -388,7 +388,7 @@ export function EditorSidePanel({
               </div>
               <div className="grid grid-cols-3 gap-1.5">
                 {['移动', '复制', '清空', '取消'].map(label => (
-                  <button key={label} type="button" disabled={!selectionArea} className="rounded-lg border border-white/12 px-2 py-1.5 disabled:opacity-30">
+                  <button key={label} type="button" disabled={!selectionArea} className="rounded-lg border border-[rgba(var(--line-rgb),0.16)] px-2 py-1.5 hover:bg-[rgba(var(--accent-rgb),0.08)] disabled:opacity-30">
                     {label}
                   </button>
                 ))}
@@ -401,17 +401,17 @@ export function EditorSidePanel({
           <div className="mb-3 flex items-center justify-between">
             <div className="text-sm font-bold">色板</div>
             {selectedColor && selectedColor.key !== TRANSPARENT_KEY && (
-              <div className="flex items-center gap-1.5 text-[10px] text-white/58">
-                <span className="h-4 w-4 rounded border border-white/20" style={{ backgroundColor: selectedColor.color }} />
+              <div className="flex items-center gap-1.5 text-[10px] text-[var(--muted)]">
+                <span className="h-4 w-4 rounded border border-[rgba(var(--line-rgb),0.22)]" style={{ backgroundColor: selectedColor.color }} />
                 {getColorKeyByHex(selectedColor.color, selectedColorSystem)}
               </div>
             )}
           </div>
           <div className="mb-3 flex gap-1.5">
-            <button type="button" onClick={onToggleFullPalette} className="flex-1 rounded-lg bg-white/10 px-2 py-1.5 text-xs text-white/72 hover:bg-white/14">
+            <button type="button" onClick={onToggleFullPalette} className="flex-1 rounded-lg border border-[rgba(var(--line-rgb),0.14)] bg-white/55 px-2 py-1.5 text-xs text-[var(--text)] hover:bg-[rgba(var(--accent-rgb),0.08)]">
               {showFullPalette ? `完整色板 (${fullPaletteColors.length})` : `当前 (${currentColors.length})`}
             </button>
-            <button type="button" className="rounded-lg bg-white/10 px-2.5 py-1.5 text-xs text-white/72 hover:bg-white/14">色相排序</button>
+            <button type="button" className="rounded-lg border border-[rgba(var(--line-rgb),0.14)] bg-white/55 px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[rgba(var(--accent-rgb),0.08)]">色相排序</button>
           </div>
           <div className="grid grid-cols-6 gap-1.5">
             {displayColors.slice(0, showFullPalette ? 120 : 42).map((color, index) => {
@@ -441,24 +441,24 @@ export function EditorSidePanel({
           <div className="mb-3 flex items-center justify-between">
             <div className="text-sm font-bold">图层</div>
             <div className="flex items-center gap-1">
-              <button type="button" title="添加贴纸" className="grid h-7 w-7 place-items-center rounded-lg text-white/48 hover:bg-white/10">+</button>
-              <button type="button" title="添加空白图层" className="grid h-7 w-7 place-items-center rounded-lg text-white/48 hover:bg-white/10">
+              <button type="button" title="添加贴纸" className="grid h-7 w-7 place-items-center rounded-lg text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]">+</button>
+              <button type="button" title="添加空白图层" className="grid h-7 w-7 place-items-center rounded-lg text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-lg bg-white/18 px-2.5 py-2.5 text-xs">
-            <button type="button" title="显示" className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-md text-white/70">
+          <div className="flex items-center gap-2 rounded-lg border border-[rgba(var(--line-rgb),0.14)] bg-white/55 px-2.5 py-2.5 text-xs">
+            <button type="button" title="显示" className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-md text-[var(--muted)]">
               <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                 <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
               </svg>
             </button>
-            <span className="font-semibold text-white">主体</span>
-            <span className="ml-auto text-white/36">锁定</span>
-            <span className="text-white/32">复制</span>
+            <span className="font-semibold text-[var(--text)]">主体</span>
+            <span className="ml-auto text-[var(--muted)] opacity-70">锁定</span>
+            <span className="text-[var(--muted)] opacity-60">复制</span>
           </div>
         </PanelCard>
       </div>

@@ -110,11 +110,11 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
   };
 
   return (
-    <div className="palette-lab flex h-[min(82vh,780px)] w-full flex-col overflow-hidden rounded-[22px] border border-white/12 bg-[#181715] text-[#f7f2e9] shadow-[0_34px_100px_rgba(0,0,0,0.42)]">
-      <div className="palette-lab-head flex items-start justify-between gap-4 border-b border-white/10 px-6 py-5">
+    <div className="palette-lab settings-shell flex h-[min(82vh,780px)] w-full flex-col overflow-hidden rounded-[22px]">
+      <div className="palette-lab-head settings-head flex items-start justify-between gap-4 border-b border-[rgba(var(--line-rgb),0.16)] px-6 py-5">
         <div>
           <div className="text-base font-semibold">色板设置</div>
-          <div className="mt-1 text-xs text-white/48">已选 {selectedCount} / {allColors.length}</div>
+          <div className="mt-1 text-xs text-[var(--muted)]">已选 {selectedCount} / {allColors.length}</div>
         </div>
         <button
           type="button"
@@ -130,8 +130,8 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
       </div>
 
       <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] px-6 pb-5 pt-4">
-        <div className="palette-toolbar grid gap-3 border-b border-white/10 pb-4 lg:grid-cols-[auto_auto_minmax(240px,1fr)]">
-          <div className="flex flex-wrap gap-1 rounded-xl border border-white/10 bg-white/5 p-1">
+        <div className="palette-toolbar grid gap-3 border-b border-[rgba(var(--line-rgb),0.16)] pb-4 lg:grid-cols-[auto_auto_minmax(240px,1fr)]">
+          <div className="flex flex-wrap gap-1 rounded-xl border border-[rgba(var(--line-rgb),0.16)] bg-white/50 p-1">
             {colorSystemOptions.map(option => (
               <button
                 key={option.key}
@@ -174,7 +174,7 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
 
           <label className="relative min-w-0">
             <span className="sr-only">搜索色号</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]">
               <circle cx="11" cy="11" r="7" />
               <path d="M20 20l-3.5-3.5" />
             </svg>
@@ -186,7 +186,7 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
                 setActiveSeries('ALL');
               }}
               placeholder="搜索色号"
-              className="h-11 w-full rounded-xl border border-white/12 bg-white/7 pl-10 pr-3 text-sm text-white outline-none transition focus:border-[rgba(var(--accent-rgb),0.8)] focus:bg-white/10 focus:ring-4 focus:ring-[rgba(var(--accent-rgb),0.14)]"
+              className="h-11 w-full rounded-xl border border-[rgba(var(--line-rgb),0.18)] bg-white/58 pl-10 pr-3 text-sm text-[var(--text)] outline-none transition placeholder:text-[var(--muted)]/70 focus:border-[rgba(var(--accent-rgb),0.8)] focus:bg-white/80 focus:ring-4 focus:ring-[rgba(var(--accent-rgb),0.14)]"
             />
           </label>
         </div>
@@ -241,7 +241,7 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
           </div>
         </div>
 
-        <div className="palette-footer flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
+        <div className="palette-footer flex flex-wrap items-center justify-between gap-3 border-t border-[rgba(var(--line-rgb),0.16)] pt-4">
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => toggleSeries(activeSeries, true)} className="palette-footer-button">全选</button>
             <button type="button" onClick={() => toggleSeries(activeSeries, false)} className="palette-footer-button">清空</button>
