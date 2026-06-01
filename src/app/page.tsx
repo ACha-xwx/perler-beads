@@ -53,6 +53,7 @@ const DEFAULT_GRANULARITY = 100;
 const DRAFT_STORAGE_KEY = 'beadforgeDraft';
 const APPEARANCE_STORAGE_KEY = 'beadforgeAppearance';
 const APPEARANCE_VERSION = 2;
+const IMPORT_FILE_ACCEPT = 'image/jpeg, image/png, image/gif, .csv, text/csv, application/csv, text/plain';
 
 // 添加自定义动画样式
 const floatAnimation = `
@@ -749,7 +750,6 @@ export default function Home() {
 
   const originalCanvasRef = useRef<HTMLCanvasElement>(null);
   const pixelatedCanvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   // ++ 添加: Ref for import file input ++
   const importPaletteInputRef = useRef<HTMLInputElement>(null);
   //const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -784,9 +784,11 @@ export default function Home() {
 
   // Update active palette based on selection and exclusions
   useEffect(() => {
+    const selectionValues = Object.values(customPaletteSelections);
+    const useFullPalette = selectionValues.length === 0 || !selectionValues.some(Boolean);
     const newActiveBeadPalette = fullBeadPalette.filter(color => {
       const normalizedHex = color.hex.toUpperCase();
-      const isSelectedInCustomPalette = customPaletteSelections[normalizedHex];
+      const isSelectedInCustomPalette = useFullPalette || customPaletteSelections[normalizedHex];
       const isNotExcluded = !excludedColorKeys.has(normalizedHex);
       return isSelectedInCustomPalette && isNotExcluded;
     });
@@ -843,6 +845,7 @@ export default function Home() {
       let hasValidData = false;
       let validCount = 0;
       let invalidCount = 0;
+      let selectedValidCount = 0;
       
       Object.entries(savedSelections).forEach(([key, value]) => {
         // 严格验证：键必须是有效的hex格式，并且存在于调色板中
@@ -850,19 +853,20 @@ export default function Home() {
           validSelections[key.toUpperCase()] = value;
           hasValidData = true;
           validCount++;
+          if (value) selectedValidCount++;
         } else {
           invalidCount++;
         }
       });
       
-      console.log(`验证结果: 有效键 ${validCount} 个, 无效键 ${invalidCount} 个`);
+      console.log(`验证结果: 有效键 ${validCount} 个, 选中 ${selectedValidCount} 个, 无效键 ${invalidCount} 个`);
       
-      if (hasValidData) {
+      if (hasValidData && selectedValidCount > 0) {
         setCustomPaletteSelections(validSelections);
     setIsCustomPalette(true);
     } else {
-        console.log('所有数据都无效，清除localStorage并重新初始化');
-        // 如果本地数据无效，清除localStorage并默认选择所有颜色
+        console.log('本地色板无效或没有选中颜色，清除localStorage并重新初始化');
+        // 如果本地数据无效或没有选中颜色，清除localStorage并默认选择所有颜色
         localStorage.removeItem('customPerlerPaletteSelections');
         const allHexValues = fullBeadPalette.map(color => color.hex.toUpperCase());
         const initialSelections = presetToSelections(allHexValues, allHexValues);
@@ -878,19 +882,6 @@ export default function Home() {
       setIsCustomPalette(false);
     }
   }, []); // 只在组件首次加载时执行
-
-  // 更新 activeBeadPalette 基于自定义选择和排除列表
-  useEffect(() => {
-    const newActiveBeadPalette = fullBeadPalette.filter(color => {
-      const normalizedHex = color.hex.toUpperCase();
-      const isSelectedInCustomPalette = customPaletteSelections[normalizedHex];
-      // 使用hex值进行排除检查
-      const isNotExcluded = !excludedColorKeys.has(normalizedHex);
-      return isSelectedInCustomPalette && isNotExcluded;
-    });
-    // 不进行色号系统转换，保持原始的MARD色号和hex值
-    setActiveBeadPalette(newActiveBeadPalette);
-  }, [customPaletteSelections, excludedColorKeys, remapTrigger]);
 
   // --- Event Handlers ---
 
@@ -1018,6 +1009,7 @@ export default function Home() {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      showToast(`正在导入 ${file.name}`);
       // 检查文件类型是否支持
       const fileName = file.name.toLowerCase();
       const fileType = file.type.toLowerCase();
@@ -1606,17 +1598,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [originalImageSrc, granularity, similarityThreshold, customPaletteSelections, pixelationMode, remapTrigger]);
 
-  // 确保文件输入框引用在组件挂载后正确设置
-  useEffect(() => {
-    // 延迟执行，确保DOM完全渲染
-    const timer = setTimeout(() => {
-      if (!fileInputRef.current) {
-        console.warn("文件输入框引用在组件挂载后仍为null，这可能会导致上传功能异常");
-      }
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
     // --- Download function (ensure filename includes palette) ---
     const handleDownloadRequest = (options?: GridDownloadOptions) => {
         // 调用移动到utils/imageDownloader.ts中的downloadImage函数
@@ -2539,7 +2520,15 @@ export default function Home() {
               </button>
 
               <div className="hidden items-center gap-1.5 md:flex">
-                <label htmlFor="bead-file-input" className="glass-action flex min-h-[44px] cursor-pointer items-center px-3 text-xs font-medium">导入</label>
+                <label className="glass-action relative flex min-h-[44px] cursor-pointer items-center overflow-hidden px-3 text-xs font-medium">
+                  <input
+                    type="file"
+                    accept={IMPORT_FILE_ACCEPT}
+                    onChange={handleFileChange}
+                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                  />
+                  <span className="pointer-events-none relative z-0">导入</span>
+                </label>
                 <button
                   type="button"
                   onClick={() => setIsDownloadSettingsOpen(true)}
@@ -2577,14 +2566,6 @@ export default function Home() {
           <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1">
             <div className={`flex min-h-0 min-w-0 flex-1 px-2 py-3 transition-[padding] duration-200 ease-out sm:px-4 ${isAppearancePanelOpen ? 'lg:pr-[340px]' : ''}`}>
               <main ref={mainRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-                <input
-                  id="bead-file-input"
-                  type="file"
-                  accept="image/jpeg, image/png, image/gif, .csv, text/csv, application/csv, text/plain"
-                  onChange={handleFileChange}
-                  ref={fileInputRef}
-                  className="sr-only"
-                />
                 <input
                   type="file"
                   accept=".json"
@@ -2634,10 +2615,13 @@ export default function Home() {
                       </div>
                     </div>
                   ) : (
-                    <label
-                      htmlFor="bead-file-input"
-                      className="relative z-10 m-auto flex max-w-sm cursor-pointer flex-col items-center gap-4 rounded-2xl border border-dashed border-[rgba(var(--line-rgb),0.32)] bg-white/52 px-8 py-10 text-center transition hover:border-[rgba(var(--accent-rgb),0.45)] hover:bg-white/70"
-                    >
+                    <label className="relative z-10 m-auto flex max-w-sm cursor-pointer flex-col items-center gap-4 overflow-hidden rounded-2xl border border-dashed border-[rgba(var(--line-rgb),0.32)] bg-white/52 px-8 py-10 text-center transition hover:border-[rgba(var(--accent-rgb),0.45)] hover:bg-white/70">
+                      <input
+                        type="file"
+                        accept={IMPORT_FILE_ACCEPT}
+                        onChange={handleFileChange}
+                        className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
+                      />
                       <BeadLogo />
                       <span className="text-lg font-semibold text-[var(--text)]">导入图片或 CSV</span>
                       <span className="text-sm leading-6 text-[var(--muted)]">拖到这里也可以。生成后可编辑、去背景、保存草稿和导出采购清单。</span>
@@ -2722,6 +2706,15 @@ export default function Home() {
                       <div className="rounded-lg bg-white/52 p-2"><div className="text-[10px] text-[var(--muted)]">颗数</div><div className="mt-1 text-xs font-semibold text-[var(--text)]">{totalBeadCount || '-'}</div></div>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
+                      <label className="glass-action relative flex min-h-[38px] cursor-pointer items-center justify-center overflow-hidden px-3 text-xs font-medium">
+                        <input
+                          type="file"
+                          accept={IMPORT_FILE_ACCEPT}
+                          onChange={handleFileChange}
+                          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+                        />
+                        <span className="pointer-events-none relative z-0">导入图片</span>
+                      </label>
                       <button type="button" onClick={handleSaveDraft} className="glass-action min-h-[38px] px-3 text-xs font-medium">保存草稿</button>
                       <button type="button" onClick={handleRestoreDraft} className="glass-action min-h-[38px] px-3 text-xs font-medium">恢复草稿</button>
                       <button type="button" onClick={handleCopyShoppingList} disabled={!colorCounts} className="glass-action min-h-[38px] px-3 text-xs font-medium disabled:opacity-40">复制清单</button>
