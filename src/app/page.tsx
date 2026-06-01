@@ -1327,13 +1327,16 @@ export default function Home() {
   // 修改pixelateImage函数接收模式参数
   const pixelateImage = (imageSrc: string, detailLevel: number, threshold: number, currentPalette: PaletteColor[], mode: PixelationMode) => {
     console.log(`Attempting to pixelate with detail: ${detailLevel}, threshold: ${threshold}, mode: ${mode}`);
-    const originalCanvas = originalCanvasRef.current;
-    const pixelatedCanvas = pixelatedCanvasRef.current;
+    const originalCanvas = originalCanvasRef.current ?? document.createElement('canvas');
+    const pixelatedCanvas = pixelatedCanvasRef.current ?? document.createElement('canvas');
 
-    if (!originalCanvas || !pixelatedCanvas) { console.error("Canvas ref(s) not available."); return; }
     const originalCtx = originalCanvas.getContext('2d', { willReadFrequently: true });
     const pixelatedCtx = pixelatedCanvas.getContext('2d');
-    if (!originalCtx || !pixelatedCtx) { console.error("Canvas context(s) not found."); return; }
+    if (!originalCtx || !pixelatedCtx) {
+      console.error("Canvas context(s) not found.");
+      showToast('导入失败：浏览器无法创建画布');
+      return;
+    }
     console.log("Canvas contexts obtained.");
 
     if (currentPalette.length === 0) {
@@ -1357,7 +1360,7 @@ export default function Home() {
     
     img.onerror = (error: Event | string) => {
       console.error("Image loading failed:", error); 
-      alert("无法加载图片。");
+      showToast('导入失败：无法加载图片');
       setOriginalImageSrc(null); 
       setMappedPixelData(null); 
       setGridDimensions(null); 
@@ -1366,165 +1369,168 @@ export default function Home() {
     };
     
     img.onload = () => {
-      console.log("Image loaded successfully.");
-      const aspectRatio = img.height / img.width;
-      const N = detailLevel;
-      const M = Math.max(1, Math.round(N * aspectRatio));
-      if (N <= 0 || M <= 0) { console.error("Invalid grid dimensions:", { N, M }); return; }
-      console.log(`Grid size: ${N}x${M}`);
+      try {
+        console.log("Image loaded successfully.");
+        const aspectRatio = img.height / img.width;
+        const N = detailLevel;
+        const M = Math.max(1, Math.round(N * aspectRatio));
+        if (N <= 0 || M <= 0) {
+          console.error("Invalid grid dimensions:", { N, M });
+          showToast('导入失败：图片尺寸异常');
+          return;
+        }
+        console.log(`Grid size: ${N}x${M}`);
 
-      // 动态调整画布尺寸：当格子数量大于100时，增加画布尺寸以保持每个格子的可见性
-      const baseWidth = 500;
-      const minCellSize = 4; // 每个格子的最小尺寸（像素）
-      const recommendedCellSize = 6; // 推荐的格子尺寸（像素）
-      
-      let outputWidth = baseWidth;
-      
-      // 如果格子数量大于100，计算需要的画布宽度
-      if (N > 100) {
-        const requiredWidthForMinSize = N * minCellSize;
-        const requiredWidthForRecommendedSize = N * recommendedCellSize;
+        // 动态调整画布尺寸：当格子数量大于100时，增加画布尺寸以保持每个格子的可见性
+        const baseWidth = 500;
+        const minCellSize = 4; // 每个格子的最小尺寸（像素）
+        const recommendedCellSize = 6; // 推荐的格子尺寸（像素）
         
-        // 使用推荐尺寸，但不超过屏幕宽度的90%（最大1200px）
-        const maxWidth = Math.min(1200, window.innerWidth * 0.9);
-        outputWidth = Math.min(maxWidth, Math.max(baseWidth, requiredWidthForRecommendedSize));
+        let outputWidth = baseWidth;
         
-        // 确保不小于最小要求
-        outputWidth = Math.max(outputWidth, requiredWidthForMinSize);
+        // 如果格子数量大于100，计算需要的画布宽度
+        if (N > 100) {
+          const requiredWidthForMinSize = N * minCellSize;
+          const requiredWidthForRecommendedSize = N * recommendedCellSize;
+          
+          // 使用推荐尺寸，但不超过屏幕宽度的90%（最大1200px）
+          const maxWidth = Math.min(1200, window.innerWidth * 0.9);
+          outputWidth = Math.min(maxWidth, Math.max(baseWidth, requiredWidthForRecommendedSize));
+          
+          // 确保不小于最小要求
+          outputWidth = Math.max(outputWidth, requiredWidthForMinSize);
+          
+          console.log(`Large grid detected (${N} columns). Adjusted canvas width from ${baseWidth} to ${outputWidth}px (cell size: ${Math.round(outputWidth / N)}px)`);
+        }
         
-        console.log(`Large grid detected (${N} columns). Adjusted canvas width from ${baseWidth} to ${outputWidth}px (cell size: ${Math.round(outputWidth / N)}px)`);
-      }
-      
-      const outputHeight = Math.round(outputWidth * aspectRatio);
-      
-      // 在控制台提示用户画布尺寸变化
-      if (N > 100) {
-        console.log(`💡 由于格子数量较多 (${N}x${M})，画布已自动放大以保持清晰度。可以使用水平滚动查看完整图像。`);
-      }
-      originalCanvas.width = img.width; originalCanvas.height = img.height;
-      pixelatedCanvas.width = outputWidth; pixelatedCanvas.height = outputHeight;
-      console.log(`Canvas dimensions: Original ${img.width}x${img.height}, Output ${outputWidth}x${outputHeight}`);
+        const outputHeight = Math.round(outputWidth * aspectRatio);
+        
+        // 在控制台提示用户画布尺寸变化
+        if (N > 100) {
+          console.log(`由于格子数量较多 (${N}x${M})，画布已自动放大以保持清晰度。可以使用水平滚动查看完整图像。`);
+        }
+        originalCanvas.width = img.width; originalCanvas.height = img.height;
+        pixelatedCanvas.width = outputWidth; pixelatedCanvas.height = outputHeight;
+        console.log(`Canvas dimensions: Original ${img.width}x${img.height}, Output ${outputWidth}x${outputHeight}`);
 
-      originalCtx.drawImage(img, 0, 0, img.width, img.height);
-      console.log("Original image drawn.");
+        originalCtx.drawImage(img, 0, 0, img.width, img.height);
+        console.log("Original image drawn.");
 
-      // 1. 使用calculatePixelGrid进行初始颜色映射
-      console.log("Starting initial color mapping using calculatePixelGrid...");
-      const initialMappedData = calculatePixelGrid(
-          originalCtx,
-          img.width,
-          img.height,
-          N,
-          M,
-          currentPalette, 
-          mode,
-          t1FallbackColor
-      );
-      console.log(`Initial data mapping complete using mode ${mode}. Starting global color merging...`);
+        // 1. 使用calculatePixelGrid进行初始颜色映射
+        console.log("Starting initial color mapping using calculatePixelGrid...");
+        const initialMappedData = calculatePixelGrid(
+            originalCtx,
+            img.width,
+            img.height,
+            N,
+            M,
+            currentPalette, 
+            mode,
+            t1FallbackColor
+        );
+        console.log(`Initial data mapping complete using mode ${mode}. Starting global color merging...`);
 
-      // --- 新的全局颜色合并逻辑 ---
-      const keyToRgbMap = new Map<string, RgbColor>();
-      const keyToColorDataMap = new Map<string, PaletteColor>();
-      currentPalette.forEach(p => {
-        keyToRgbMap.set(p.key, p.rgb);
-        keyToColorDataMap.set(p.key, p);
-      });
+        // --- 新的全局颜色合并逻辑 ---
+        const keyToRgbMap = new Map<string, RgbColor>();
+        const keyToColorDataMap = new Map<string, PaletteColor>();
+        currentPalette.forEach(p => {
+          keyToRgbMap.set(p.key, p.rgb);
+          keyToColorDataMap.set(p.key, p);
+        });
 
-      // 2. 统计初始颜色数量
-      const initialColorCounts: { [key: string]: number } = {};
-      initialMappedData.flat().forEach(cell => {
-          if (cell && cell.key && !cell.isExternal && cell.key !== TRANSPARENT_KEY) {
-              initialColorCounts[cell.key] = (initialColorCounts[cell.key] || 0) + 1;
-          }
-      });
-      console.log("Initial color counts:", initialColorCounts);
+        // 2. 统计初始颜色数量
+        const initialColorCounts: { [key: string]: number } = {};
+        initialMappedData.flat().forEach(cell => {
+            if (cell && cell.key && !cell.isExternal && cell.key !== TRANSPARENT_KEY) {
+                initialColorCounts[cell.key] = (initialColorCounts[cell.key] || 0) + 1;
+            }
+        });
+        console.log("Initial color counts:", initialColorCounts);
 
-      // 3. 创建一个颜色排序列表，按出现频率从高到低排序
-      const colorsByFrequency = Object.entries(initialColorCounts)
-          .sort((a, b) => b[1] - a[1])  // 按频率降序排序
-          .map(entry => entry[0]);      // 只保留颜色键
-      
-      if (colorsByFrequency.length === 0) {
-          console.log("No non-background colors found! Skipping merging.");
-      }
+        // 3. 创建一个颜色排序列表，按出现频率从高到低排序
+        const colorsByFrequency = Object.entries(initialColorCounts)
+            .sort((a, b) => b[1] - a[1])  // 按频率降序排序
+            .map(entry => entry[0]);      // 只保留颜色键
+        
+        if (colorsByFrequency.length === 0) {
+            console.log("No non-background colors found! Skipping merging.");
+        }
 
-      console.log("Colors sorted by frequency:", colorsByFrequency);
-      
-      // 4. 复制初始数据，准备合并
-      const mergedData: MappedPixel[][] = initialMappedData.map(row => 
-          row.map(cell => ({ ...cell, isExternal: cell.isExternal ?? false }))
-      );
-      
-      // 5. 处理相似颜色合并
-      const similarityThresholdValue = threshold;
-      
-      // 已被合并（替换）的颜色集合
-      const replacedColors = new Set<string>();
-      
-      // 对每个颜色按频率从高到低处理
-      for (let i = 0; i < colorsByFrequency.length; i++) {
-          const currentKey = colorsByFrequency[i];
-          
-          // 如果当前颜色已经被合并到更频繁的颜色中，跳过
-          if (replacedColors.has(currentKey)) continue;
-          
-          const currentRgb = keyToRgbMap.get(currentKey);
-          if (!currentRgb) {
-              console.warn(`RGB not found for key ${currentKey}. Skipping.`);
-              continue;
-          }
-          
-          // 检查剩余的低频颜色
-          for (let j = i + 1; j < colorsByFrequency.length; j++) {
-              const lowerFreqKey = colorsByFrequency[j];
-              
-              // 如果低频颜色已被替换，跳过
-              if (replacedColors.has(lowerFreqKey)) continue;
-              
-              const lowerFreqRgb = keyToRgbMap.get(lowerFreqKey);
-              if (!lowerFreqRgb) {
-                  console.warn(`RGB not found for key ${lowerFreqKey}. Skipping.`);
-                  continue;
-              }
-              
-              // 计算颜色距离
-              const dist = colorDistance(currentRgb, lowerFreqRgb);
-              
-              // 如果距离小于阈值，将低频颜色替换为高频颜色
-              if (dist < similarityThresholdValue) {
-                  console.log(`Merging color ${lowerFreqKey} into ${currentKey} (Distance: ${dist.toFixed(2)})`);
-                  
-                  // 标记这个颜色已被替换
-                  replacedColors.add(lowerFreqKey);
-                  
-                  // 替换所有使用这个低频颜色的单元格
-                  for (let r = 0; r < M; r++) {
-                      for (let c = 0; c < N; c++) {
-                          if (mergedData[r][c].key === lowerFreqKey) {
-                              const colorData = keyToColorDataMap.get(currentKey);
-                              if (colorData) {
-                                  mergedData[r][c] = {
-                                      key: currentKey,
-                                      color: colorData.hex,
-                                      isExternal: false
-                                  };
-                              }
-                          }
-                      }
-                  }
-              }
-          }
-      }
-      
-      if (replacedColors.size > 0) {
-          console.log(`Merged ${replacedColors.size} less frequent similar colors into more frequent ones.`);
-      } else {
-          console.log("No colors were similar enough to merge.");
-      }
-      // --- 结束新的全局颜色合并逻辑 ---
+        console.log("Colors sorted by frequency:", colorsByFrequency);
+        
+        // 4. 复制初始数据，准备合并
+        const mergedData: MappedPixel[][] = initialMappedData.map(row => 
+            row.map(cell => ({ ...cell, isExternal: cell.isExternal ?? false }))
+        );
+        
+        // 5. 处理相似颜色合并
+        const similarityThresholdValue = threshold;
+        
+        // 已被合并（替换）的颜色集合
+        const replacedColors = new Set<string>();
+        
+        // 对每个颜色按频率从高到低处理
+        for (let i = 0; i < colorsByFrequency.length; i++) {
+            const currentKey = colorsByFrequency[i];
+            
+            // 如果当前颜色已经被合并到更频繁的颜色中，跳过
+            if (replacedColors.has(currentKey)) continue;
+            
+            const currentRgb = keyToRgbMap.get(currentKey);
+            if (!currentRgb) {
+                console.warn(`RGB not found for key ${currentKey}. Skipping.`);
+                continue;
+            }
+            
+            // 检查剩余的低频颜色
+            for (let j = i + 1; j < colorsByFrequency.length; j++) {
+                const lowerFreqKey = colorsByFrequency[j];
+                
+                // 如果低频颜色已被替换，跳过
+                if (replacedColors.has(lowerFreqKey)) continue;
+                
+                const lowerFreqRgb = keyToRgbMap.get(lowerFreqKey);
+                if (!lowerFreqRgb) {
+                    console.warn(`RGB not found for key ${lowerFreqKey}. Skipping.`);
+                    continue;
+                }
+                
+                // 计算颜色距离
+                const dist = colorDistance(currentRgb, lowerFreqRgb);
+                
+                // 如果距离小于阈值，将低频颜色替换为高频颜色
+                if (dist < similarityThresholdValue) {
+                    console.log(`Merging color ${lowerFreqKey} into ${currentKey} (Distance: ${dist.toFixed(2)})`);
+                    
+                    // 标记这个颜色已被替换
+                    replacedColors.add(lowerFreqKey);
+                    
+                    // 替换所有使用这个低频颜色的单元格
+                    for (let r = 0; r < M; r++) {
+                        for (let c = 0; c < N; c++) {
+                            if (mergedData[r][c].key === lowerFreqKey) {
+                                const colorData = keyToColorDataMap.get(currentKey);
+                                if (colorData) {
+                                    mergedData[r][c] = {
+                                        key: currentKey,
+                                        color: colorData.hex,
+                                        isExternal: false
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (replacedColors.size > 0) {
+            console.log(`Merged ${replacedColors.size} less frequent similar colors into more frequent ones.`);
+        } else {
+            console.log("No colors were similar enough to merge.");
+        }
+        // --- 结束新的全局颜色合并逻辑 ---
 
-      // --- 绘制和状态更新 ---
-      if (pixelatedCanvasRef.current) {
         setMappedPixelData(mergedData);
         setGridDimensions({ N, M });
 
@@ -1547,8 +1553,14 @@ export default function Home() {
         console.log("Color counts updated based on merged data (after merging):", counts);
         console.log("Total bead count (total beads):", totalCount);
         console.log("Stored initial grid color keys:", Object.keys(counts));
-      } else {
-        console.error("Pixelated canvas ref is null, skipping draw call in pixelateImage.");
+        showToast(`导入完成：${N} x ${M}`);
+      } catch (error) {
+        console.error("Pixelation failed:", error);
+        showToast('导入失败：图片处理出错');
+        setMappedPixelData(null);
+        setGridDimensions(null);
+        setColorCounts(null);
+        setInitialGridColorKeys(new Set());
       }
     }; // 正确闭合 img.onload 函数
     
@@ -1569,7 +1581,7 @@ export default function Home() {
   useEffect(() => {
     if (originalImageSrc && activeBeadPalette.length > 0) {
        const timeoutId = setTimeout(() => {
-         if (originalImageSrc && originalCanvasRef.current && pixelatedCanvasRef.current && activeBeadPalette.length > 0) {
+         if (originalImageSrc && activeBeadPalette.length > 0) {
            console.log("useEffect triggered: Processing image due to src, granularity, threshold, palette selection, mode or remap trigger.");
            pixelateImage(originalImageSrc, granularity, similarityThreshold, activeBeadPalette, pixelationMode);
          } else {
