@@ -52,6 +52,7 @@ import FocusModePreDownloadModal from '../components/FocusModePreDownloadModal';
 const DEFAULT_GRANULARITY = 100;
 const DRAFT_STORAGE_KEY = 'beadforgeDraft';
 const APPEARANCE_STORAGE_KEY = 'beadforgeAppearance';
+const APPEARANCE_VERSION = 2;
 
 // 添加自定义动画样式
 const floatAnimation = `
@@ -79,6 +80,38 @@ const floatAnimation = `
   @keyframes pulseRing {
     0%, 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.25); }
     50% { box-shadow: 0 0 0 10px rgba(var(--accent-rgb), 0); }
+  }
+
+  @keyframes paletteBackdropIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes palettePanelIn {
+    from { opacity: 0; transform: translateY(22px) scale(0.975); filter: saturate(0.8); }
+    to { opacity: 1; transform: translateY(0) scale(1); filter: saturate(1); }
+  }
+
+  @keyframes paletteCellIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.92); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes paletteGlowSweep {
+    from { transform: translateX(-140%) rotate(18deg); opacity: 0; }
+    28% { opacity: 1; }
+    to { transform: translateX(180%) rotate(18deg); opacity: 0; }
+  }
+
+  @keyframes paletteTabPop {
+    0% { transform: scale(0.94); }
+    70% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes installFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
   }
 
   .animate-float {
@@ -169,16 +202,271 @@ const floatAnimation = `
     box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18), 0 16px 32px rgba(var(--shadow-rgb), 0.1);
   }
 
+  .install-pwa-button {
+    animation: installFloat 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+
+  .palette-backdrop {
+    animation: paletteBackdropIn 180ms ease-out both;
+  }
+
+  .palette-modal {
+    animation: palettePanelIn 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .palette-lab {
+    --palette-accent: rgb(var(--accent-rgb));
+    --palette-accent-2: rgb(var(--accent-2-rgb));
+  }
+
+  .palette-lab-head {
+    background:
+      radial-gradient(circle at 12% 0%, rgba(var(--accent-rgb), 0.22), transparent 34%),
+      linear-gradient(135deg, rgba(255,255,255,0.06), transparent);
+  }
+
+  .palette-icon-button,
+  .palette-view-button,
+  .palette-footer-button,
+  .palette-save-button,
+  .palette-tab,
+  .palette-series-button,
+  .palette-color-cell {
+    touch-action: manipulation;
+  }
+
+  .palette-icon-button,
+  .palette-view-button {
+    display: grid;
+    place-items: center;
+    min-width: 42px;
+    min-height: 42px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.72);
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+
+  .palette-icon-button:hover,
+  .palette-view-button:hover,
+  .palette-view-button-active {
+    transform: translateY(-1px);
+    border-color: rgba(var(--accent-rgb), 0.55);
+    background: rgba(var(--accent-rgb), 0.18);
+    color: white;
+  }
+
+  .palette-tab {
+    min-height: 36px;
+    border-radius: 10px;
+    padding: 0 16px;
+    color: rgba(255,255,255,0.62);
+    font-size: 12px;
+    font-weight: 700;
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, color 160ms ease;
+  }
+
+  .palette-tab:hover {
+    transform: translateY(-1px);
+    color: white;
+    background: rgba(255,255,255,0.08);
+  }
+
+  .palette-tab-active {
+    background: rgba(248,244,232,0.92);
+    color: #1b1814;
+    animation: paletteTabPop 230ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .palette-series-list,
+  .palette-color-scroll {
+    scrollbar-color: rgba(255,255,255,0.48) rgba(255,255,255,0.08);
+  }
+
+  .palette-series-button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 38px;
+    border-radius: 12px;
+    padding: 0 12px;
+    color: rgba(255,255,255,0.66);
+    font-size: 12px;
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, color 160ms ease;
+  }
+
+  .palette-series-button:hover {
+    transform: translateX(2px);
+    color: white;
+    background: rgba(255,255,255,0.07);
+  }
+
+  .palette-series-button-active {
+    color: #191815;
+    background: rgba(248,244,232,0.92);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.2);
+  }
+
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+    align-content: start;
+    gap: 8px;
+  }
+
+  .palette-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    align-content: start;
+    gap: 8px;
+  }
+
+  .palette-color-cell {
+    --cell-index: 0;
+    position: relative;
+    min-height: 48px;
+    overflow: hidden;
+    border-radius: 10px;
+    border: 2px solid color-mix(in srgb, var(--cell-color) 76%, white 24%);
+    background: color-mix(in srgb, var(--cell-color) 86%, black 14%);
+    color: rgba(20,20,18,0.74);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.32), 0 10px 20px rgba(0,0,0,0.2);
+    animation: paletteCellIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: min(calc(var(--cell-index) * 12ms), 260ms);
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+  }
+
+  .palette-color-cell::before {
+    content: "";
+    position: absolute;
+    inset: -35% auto -35% -50%;
+    width: 50%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.52), transparent);
+    transform: translateX(-140%) rotate(18deg);
+  }
+
+  .palette-color-cell:hover {
+    transform: translateY(-3px) scale(1.035);
+    filter: saturate(1.12);
+    border-color: rgba(255,255,255,0.9);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 18px 34px rgba(0,0,0,0.32);
+  }
+
+  .palette-color-cell:hover::before {
+    animation: paletteGlowSweep 520ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .palette-color-cell-selected {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 0 0 2px rgba(var(--accent-rgb),0.52), 0 18px 34px rgba(0,0,0,0.34);
+  }
+
+  .palette-color-fill {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 26% 20%, rgba(255,255,255,0.44), transparent 34%),
+      linear-gradient(135deg, rgba(255,255,255,0.16), transparent 46%);
+    pointer-events: none;
+  }
+
+  .palette-color-key {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    min-height: 48px;
+    place-items: center;
+    padding: 0 4px;
+    color: color-mix(in srgb, var(--cell-color) 28%, #12100e 72%);
+    font-family: var(--font-geist-mono), "Cascadia Code", Consolas, monospace;
+    font-size: 10px;
+    font-weight: 800;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.38);
+  }
+
+  .palette-list .palette-color-key {
+    justify-content: start;
+    padding-left: 14px;
+    font-size: 12px;
+  }
+
+  .palette-color-check {
+    position: absolute;
+    right: 3px;
+    top: 3px;
+    z-index: 2;
+    display: grid;
+    height: 16px;
+    width: 16px;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.82);
+    color: rgba(var(--accent-rgb),0.92);
+    opacity: 0;
+    transform: scale(0.7) rotate(-12deg);
+    transition: opacity 150ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .palette-color-cell-selected .palette-color-check {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+
+  .palette-footer-button,
+  .palette-save-button {
+    min-height: 38px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.14);
+    padding: 0 14px;
+    color: rgba(255,255,255,0.82);
+    font-size: 12px;
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease;
+  }
+
+  .palette-footer-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255,255,255,0.28);
+    background: rgba(255,255,255,0.08);
+  }
+
+  .palette-save-button {
+    border-color: rgba(var(--accent-rgb),0.62);
+    background: linear-gradient(135deg, rgba(var(--accent-rgb),0.92), rgba(var(--accent-2-rgb),0.78));
+    color: white;
+    box-shadow: 0 14px 28px rgba(var(--accent-rgb),0.22);
+  }
+
+  .palette-save-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 36px rgba(var(--accent-rgb),0.28);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-float,
     .workspace-enter,
     .glass-action:hover::after,
     .glass-action-active,
-    .tech-grid-bg {
+    .tech-grid-bg,
+    .install-pwa-button,
+    .palette-backdrop,
+    .palette-modal,
+    .palette-color-cell,
+    .palette-tab-active,
+    .palette-color-cell:hover::before {
       animation: none;
     }
 
-    .glass-action {
+    .glass-action,
+    .palette-icon-button,
+    .palette-view-button,
+    .palette-footer-button,
+    .palette-save-button,
+    .palette-tab,
+    .palette-series-button,
+    .palette-color-cell,
+    .palette-color-check {
       transition: none;
     }
   }
@@ -346,6 +634,7 @@ export default function Home() {
   const appearanceStyle = {
     '--ui-font': selectedFont.stack,
     '--font-scale': `${appearanceSettings.scale / 100}`,
+    fontSize: `${appearanceSettings.scale}%`,
   } as React.CSSProperties;
 
   // 放大镜切换处理函数
@@ -479,9 +768,15 @@ export default function Home() {
     try {
       const stored = localStorage.getItem(APPEARANCE_STORAGE_KEY);
       if (stored) {
-        setAppearanceSettings(normalizeAppearanceSettings(JSON.parse(stored)));
+        const parsed = JSON.parse(stored);
+        const normalized = normalizeAppearanceSettings({
+          ...parsed,
+          font: parsed.version ? parsed.font : defaultAppearanceSettings.font,
+        });
+        setAppearanceSettings(normalized);
+        localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify({ ...normalized, version: APPEARANCE_VERSION }));
       } else {
-        localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(defaultAppearanceSettings));
+        localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify({ ...defaultAppearanceSettings, version: APPEARANCE_VERSION }));
       }
     } catch (error) {
       console.warn('读取外观设置失败，已使用默认设置:', error);
@@ -623,7 +918,7 @@ export default function Home() {
     setAppearanceSettings(prev => {
       const next = normalizeAppearanceSettings({ ...prev, [key]: value });
       if (typeof window !== 'undefined') {
-        localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(next));
+        localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify({ ...next, version: APPEARANCE_VERSION }));
       }
       return next;
     });
@@ -631,7 +926,7 @@ export default function Home() {
 
   const handleResetAppearance = () => {
     setAppearanceSettings(defaultAppearanceSettings);
-    localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(defaultAppearanceSettings));
+    localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify({ ...defaultAppearanceSettings, version: APPEARANCE_VERSION }));
     showToast('外观已恢复默认');
   };
 
@@ -2191,12 +2486,12 @@ export default function Home() {
     <>
       <style dangerouslySetInnerHTML={{ __html: floatAnimation }} />
       <style dangerouslySetInnerHTML={{ __html: '@keyframes toastFadeInOut{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1;transform:translate(-50%,0)}85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-10px)}}' }} />
-      <InstallPWA />
 
       <div
         className={`workspace-app theme-${appearanceSettings.theme} h-[100dvh] flex flex-col overflow-hidden tech-grid-bg`}
         style={appearanceStyle}
       >
+        <InstallPWA />
         <header className="sticky top-0 z-40 w-full border-b border-[rgba(var(--line-rgb),0.22)] bg-[rgba(var(--panel-rgb),0.74)]/90 backdrop-blur-xl">
           <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center gap-2 px-2 sm:gap-3 sm:px-4">
             <button
@@ -2563,9 +2858,8 @@ export default function Home() {
       </div>
 
       {isCustomPaletteEditorOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
-          <div className="glass-panel flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white/88">
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="palette-backdrop fixed inset-0 z-[120] flex items-center justify-center bg-black/45 p-4 backdrop-blur-md">
+          <div className="palette-modal w-full max-w-5xl">
               <CustomPaletteEditor
                 allColors={fullBeadPalette}
                 currentSelections={customPaletteSelections}
@@ -2575,8 +2869,8 @@ export default function Home() {
                 onExportCustomPalette={handleExportCustomPalette}
                 onImportCustomPalette={triggerImportPalette}
                 selectedColorSystem={selectedColorSystem}
+                onColorSystemChange={setSelectedColorSystem}
               />
-            </div>
           </div>
         </div>
       )}

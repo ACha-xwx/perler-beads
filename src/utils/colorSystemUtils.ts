@@ -5,7 +5,7 @@ import colorSystemMapping from '../app/colorSystemMapping.json';
 export type ColorSystem = 'MARD' | 'COCO' | '漫漫' | '盼盼' | '咪小窝';
 
 // 色号系统选项
-export const colorSystemOptions = [
+export const colorSystemOptions: Array<{ key: ColorSystem; name: string }> = [
   { key: 'MARD', name: 'MARD' },
   { key: 'COCO', name: 'COCO' },
   { key: '漫漫', name: '漫漫' },

@@ -9,7 +9,7 @@ export interface AppearanceSettings {
 
 export const defaultAppearanceSettings: AppearanceSettings = {
   theme: 'mono',
-  font: 'system',
+  font: 'serif',
   scale: 100,
 };
 
