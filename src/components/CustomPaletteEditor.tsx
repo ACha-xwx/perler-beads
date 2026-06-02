@@ -191,15 +191,15 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
           </label>
         </div>
 
-        <div className="grid min-h-0 gap-4 py-4 md:grid-cols-[120px_minmax(0,1fr)]">
+        <div className="grid min-h-0 gap-4 py-4 md:grid-cols-[136px_minmax(0,1fr)]">
           <nav className="palette-series-list min-h-0 overflow-auto pr-1">
             <button
               type="button"
               onClick={() => setActiveSeries('ALL')}
               className={`palette-series-button ${activeSeries === 'ALL' ? 'palette-series-button-active' : ''}`}
             >
-              <span>全部</span>
-              <span>{selectedCount}/{allColors.length}</span>
+              <span className="whitespace-nowrap">全部</span>
+              <span className="whitespace-nowrap tabular-nums">{selectedCount}/{allColors.length}</span>
             </button>
             {groups.map(group => (
               <button
@@ -208,8 +208,8 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
                 onClick={() => setActiveSeries(group.key)}
                 className={`palette-series-button ${activeSeries === group.key ? 'palette-series-button-active' : ''}`}
               >
-                <span>{group.key}</span>
-                <span>{group.selectedCount}/{group.colors.length}</span>
+                <span className="whitespace-nowrap">{group.key}</span>
+                <span className="whitespace-nowrap tabular-nums">{group.selectedCount}/{group.colors.length}</span>
               </button>
             ))}
           </nav>

@@ -38,6 +38,7 @@ import {
   ColorSystem 
 } from '../utils/colorSystemUtils';
 import PixelatedPreviewCanvas from '../components/PixelatedPreviewCanvas';
+import type { CanvasInteractionPhase } from '../components/PixelatedPreviewCanvas';
 import EditorMinimap from '../components/EditorMinimap';
 import GridTooltip from '../components/GridTooltip';
 import CustomPaletteEditor from '../components/CustomPaletteEditor';
@@ -79,7 +80,22 @@ interface PreviewSettings {
   background: PreviewBackground;
   customBackground: string;
   brandText: string;
-  brandOpacity: number;
+}
+
+interface EditorLayer {
+  id: string;
+  name: string;
+  type: 'base' | 'layer' | 'sticker';
+  visible: boolean;
+  locked: boolean;
+}
+
+interface PaintStrokeState {
+  active: boolean;
+  snapshotSaved: boolean;
+  lastPoint: GridPoint | null;
+  touchedCells: Set<string>;
+  workingData: MappedPixel[][] | null;
 }
 
 interface FocusWorkbenchState {
@@ -117,7 +133,6 @@ const DRAFT_STORAGE_KEY = 'beadforgeDraft';
 const APPEARANCE_STORAGE_KEY = 'beadforgeAppearance';
 const APPEARANCE_VERSION = 2;
 const IMPORT_FILE_ACCEPT = 'image/jpeg, image/png, image/gif, .csv, text/csv, application/csv, text/plain';
-const BACKGROUND_COLOR_KEYS = new Set(['T01', 'T1', 'H01', 'H1', 'H02', 'H2', 'P01', 'P1']);
 
 // 添加自定义动画样式
 const floatAnimation = `
@@ -628,8 +643,12 @@ const floatAnimation = `
   .palette-view-button {
     display: grid;
     place-items: center;
-    min-width: 42px;
-    min-height: 42px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    flex: 0 0 44px;
+    padding: 0;
     border-radius: 12px;
     border: 1px solid rgba(var(--line-rgb),0.18);
     background: rgba(255,255,255,0.54);
@@ -676,6 +695,7 @@ const floatAnimation = `
   .palette-series-button {
     display: flex;
     width: 100%;
+    min-width: 0;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
@@ -684,7 +704,19 @@ const floatAnimation = `
     padding: 0 12px;
     color: var(--muted);
     font-size: 12px;
+    white-space: nowrap;
     transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, color 160ms ease;
+  }
+
+  .palette-series-button span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .palette-series-button span:last-child {
+    flex: 0 0 auto;
+    font-variant-numeric: tabular-nums;
   }
 
   .palette-series-button:hover {
@@ -1062,10 +1094,6 @@ function PreviewSidePanel({
             placeholder="留空则不显示"
             className="w-full rounded-lg border border-[rgba(var(--line-rgb),0.2)] bg-white/58 px-3 py-2 text-xs text-[var(--text)] outline-none focus:border-[rgba(var(--accent-rgb),0.55)]"
           />
-          <label className="mt-3 grid gap-1 text-[11px] text-[var(--muted)]">
-            透明度 {settings.brandOpacity}%
-            <input type="range" min="0" max="100" value={settings.brandOpacity} onChange={event => setValue('brandOpacity', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
-          </label>
         </section>
       </div>
     </aside>
@@ -1208,8 +1236,11 @@ export default function Home() {
     background: 'cream',
     customBackground: '#f4ead8',
     brandText: '',
-    brandOpacity: 0,
   });
+  const [editorLayers, setEditorLayers] = useState<EditorLayer[]>([
+    { id: 'base', name: '主体', type: 'base', visible: true, locked: true },
+  ]);
+  const [activeLayerId, setActiveLayerId] = useState<string>('base');
   const [focusState, setFocusState] = useState<FocusWorkbenchState>({
     currentColor: '',
     selectedCell: null,
@@ -1281,6 +1312,13 @@ export default function Home() {
   }
   const [editHistory, setEditHistory] = useState<EditSnapshot[]>([]);
   const [redoHistory, setRedoHistory] = useState<EditSnapshot[]>([]);
+  const paintStrokeRef = useRef<PaintStrokeState>({
+    active: false,
+    snapshotSaved: false,
+    lastPoint: null,
+    touchedCells: new Set<string>(),
+    workingData: null,
+  });
 
   // 新增：轻量提示
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1430,6 +1468,13 @@ export default function Home() {
   const clearEditHistory = useCallback(() => {
     setEditHistory([]);
     setRedoHistory([]);
+    paintStrokeRef.current = {
+      active: false,
+      snapshotSaved: false,
+      lastPoint: null,
+      touchedCells: new Set<string>(),
+      workingData: null,
+    };
   }, []);
 
   // 放大镜像素编辑处理函数
@@ -1489,6 +1534,7 @@ export default function Home() {
   const pixelatedCanvasRef = useRef<HTMLCanvasElement>(null);
   // ++ 添加: Ref for import file input ++
   const importPaletteInputRef = useRef<HTMLInputElement>(null);
+  const stickerInputRef = useRef<HTMLInputElement>(null);
   //const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   // ++ Re-add touch refs needed for tooltip logic ++
   //const touchStartPosRef = useRef<{ x: number; y: number; pageX: number; pageY: number } | null>(null);
@@ -1833,6 +1879,59 @@ export default function Home() {
     event.stopPropagation();
   };
 
+  const resetEditorLayers = () => {
+    setEditorLayers([{ id: 'base', name: '主体', type: 'base', visible: true, locked: true }]);
+    setActiveLayerId('base');
+  };
+
+  const handleAddEditorLayer = () => {
+    const id = `layer-${Date.now()}`;
+    const newLayer: EditorLayer = {
+      id,
+      name: `图层 ${editorLayers.filter(layer => layer.type === 'layer').length + 1}`,
+      type: 'layer',
+      visible: true,
+      locked: false,
+    };
+    setEditorLayers(prev => [newLayer, ...prev]);
+    setActiveLayerId(id);
+    showToast('已添加空白图层');
+  };
+
+  const handleAddStickerRequest = () => {
+    stickerInputRef.current?.click();
+  };
+
+  const handleStickerFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const id = `sticker-${Date.now()}`;
+    const rawName = file.name.replace(/\.[^.]+$/, '').trim();
+    const newLayer: EditorLayer = {
+      id,
+      name: rawName ? `贴纸 · ${rawName}` : `贴纸 ${editorLayers.filter(layer => layer.type === 'sticker').length + 1}`,
+      type: 'sticker',
+      visible: true,
+      locked: false,
+    };
+    setEditorLayers(prev => [newLayer, ...prev]);
+    setActiveLayerId(id);
+    showToast('已添加贴纸图层');
+
+    event.target.value = '';
+  };
+
+  const handleLayerSelect = (id: string) => {
+    setActiveLayerId(id);
+  };
+
+  const handleToggleLayerVisible = (id: string) => {
+    setEditorLayers(prev => prev.map(layer => (
+      layer.id === id ? { ...layer, visible: !layer.visible } : layer
+    )));
+  };
+
   // 根据mappedPixelData生成合成的originalImageSrc
   const generateSyntheticImageFromPixelData = (pixelData: MappedPixel[][], dimensions: { N: number; M: number }): string => {
     const canvas = document.createElement('canvas');
@@ -1919,6 +2018,7 @@ export default function Home() {
           setIsManualColoringMode(false);
           setSelectedColor(null);
           setIsEraseMode(false);
+          resetEditorLayers();
           setWorkspaceMode('preview');
           intendedWorkspaceModeRef.current = 'preview';
           resetPendingEditorGestures();
@@ -1942,6 +2042,7 @@ export default function Home() {
         setColorCounts(null);
         setTotalBeadCount(0);
         setInitialGridColorKeys(new Set()); // ++ 重置初始键 ++
+        resetEditorLayers();
         // ++ 重置横轴格子数量为默认值 ++
         const defaultGranularity = 100;
         setGranularity(defaultGranularity);
@@ -2241,39 +2342,6 @@ export default function Home() {
               });
             }
           }
-        }
-
-        const isBackgroundCell = (cell: MappedPixel) => {
-          const displayKey = (cell.key || '').toUpperCase();
-          const mardKey = getColorKeyByHex(cell.color, 'MARD').toUpperCase();
-          return BACKGROUND_COLOR_KEYS.has(displayKey) || BACKGROUND_COLOR_KEYS.has(mardKey);
-        };
-        const visitedForBackground = Array(M).fill(null).map(() => Array(N).fill(false));
-        const backgroundStack: GridPoint[] = [];
-        const pushBackground = (row: number, col: number) => {
-          if (row < 0 || row >= M || col < 0 || col >= N || visitedForBackground[row][col]) return;
-          const cell = mergedData[row][col];
-          if (!cell || !isBackgroundCell(cell)) return;
-          visitedForBackground[row][col] = true;
-          backgroundStack.push({ row, col });
-        };
-
-        for (let col = 0; col < N; col++) {
-          pushBackground(0, col);
-          if (M > 1) pushBackground(M - 1, col);
-        }
-        for (let row = 1; row < M - 1; row++) {
-          pushBackground(row, 0);
-          if (N > 1) pushBackground(row, N - 1);
-        }
-
-        while (backgroundStack.length > 0) {
-          const point = backgroundStack.pop()!;
-          mergedData[point.row][point.col] = {
-            ...mergedData[point.row][point.col],
-            isExternal: true,
-          };
-          directions.forEach(direction => pushBackground(point.row + direction.row, point.col + direction.col));
         }
 
         setMappedPixelData(mergedData);
@@ -2710,8 +2778,29 @@ export default function Home() {
     return { newColorCounts, newTotalCount };
   };
 
-  const commitPixelDataChange = (newPixelData: MappedPixel[][], message?: string) => {
-    saveEditSnapshot();
+  const saveEditSnapshotFromPixelData = (pixelData: MappedPixel[][]) => {
+    const { newColorCounts, newTotalCount } = recalculateStatsFromPixelData(pixelData);
+    const snapshot: EditSnapshot = {
+      mappedPixelData: pixelData.map(row => row.map(cell => ({ ...cell }))),
+      colorCounts: newColorCounts,
+      totalBeadCount: newTotalCount,
+    };
+    setEditHistory(prev => [...prev.slice(-49), snapshot]);
+    setRedoHistory([]);
+  };
+
+  const commitPixelDataChange = (
+    newPixelData: MappedPixel[][],
+    message?: string,
+    options: { saveSnapshot?: boolean; snapshotData?: MappedPixel[][] } = {},
+  ) => {
+    if (options.saveSnapshot !== false) {
+      if (options.snapshotData) {
+        saveEditSnapshotFromPixelData(options.snapshotData);
+      } else {
+        saveEditSnapshot();
+      }
+    }
     setMappedPixelData(newPixelData);
     const { newColorCounts, newTotalCount } = recalculateStatsFromPixelData(newPixelData);
     setColorCounts(newColorCounts);
@@ -2736,6 +2825,11 @@ export default function Home() {
     colorData: { key: string; color: string },
     sourceData: MappedPixel[][] = mappedPixelData || [],
     dimensions: { N: number; M: number } | null = gridDimensions,
+    options: {
+      saveSnapshot?: boolean;
+      snapshotData?: MappedPixel[][];
+      onApplied?: (pixelData: MappedPixel[][]) => void;
+    } = {},
   ) => {
     if (!sourceData.length || !dimensions) return false;
 
@@ -2760,7 +2854,11 @@ export default function Home() {
     });
 
     if (changed) {
-      commitPixelDataChange(newPixelData);
+      commitPixelDataChange(newPixelData, undefined, {
+        saveSnapshot: options.saveSnapshot,
+        snapshotData: options.snapshotData ?? sourceData,
+      });
+      options.onApplied?.(newPixelData);
     }
 
     return changed;
@@ -2786,6 +2884,41 @@ export default function Home() {
       const key = `${cell.row},${cell.col}`;
       if (seen.has(key)) return false;
       seen.add(key);
+      return true;
+    });
+  };
+
+  const resetPaintStroke = () => {
+    paintStrokeRef.current = {
+      active: false,
+      snapshotSaved: false,
+      lastPoint: null,
+      touchedCells: new Set<string>(),
+      workingData: null,
+    };
+  };
+
+  const ensurePaintStroke = () => {
+    const stroke = paintStrokeRef.current;
+    if (stroke.active) return stroke;
+
+    paintStrokeRef.current = {
+      active: true,
+      snapshotSaved: false,
+      lastPoint: null,
+      touchedCells: new Set<string>(),
+      workingData: mappedPixelData ? mappedPixelData.map(row => row.map(cell => ({ ...cell }))) : null,
+    };
+
+    return paintStrokeRef.current;
+  };
+
+  const filterStrokeCells = (cells: GridPoint[]) => {
+    const stroke = paintStrokeRef.current;
+    return dedupeCells(cells).filter(cell => {
+      const key = `${cell.row},${cell.col}`;
+      if (stroke.touchedCells.has(key)) return false;
+      stroke.touchedCells.add(key);
       return true;
     });
   };
@@ -2832,6 +2965,40 @@ export default function Home() {
     }
 
     return cells;
+  };
+
+  const applyPaintStrokeAtPoint = (
+    point: GridPoint,
+    colorData: { key: string; color: string },
+    size: number,
+    mirrorX: boolean,
+    mirrorY: boolean,
+  ) => {
+    if (!mappedPixelData || !gridDimensions) return false;
+
+    const stroke = ensurePaintStroke();
+    const sourceData = stroke.workingData || mappedPixelData;
+    const baseCells = stroke.lastPoint
+      ? getLineCells(stroke.lastPoint, point, size)
+      : getBrushCells(point.row, point.col, size);
+    const cells = filterStrokeCells(expandMirroredCells(baseCells, mirrorX, mirrorY));
+
+    stroke.lastPoint = point;
+    if (cells.length === 0) return false;
+
+    const changed = applyCells(cells, colorData, sourceData, gridDimensions, {
+      saveSnapshot: !stroke.snapshotSaved,
+      snapshotData: mappedPixelData,
+      onApplied: pixelData => {
+        stroke.workingData = pixelData;
+      },
+    });
+
+    if (changed) {
+      stroke.snapshotSaved = true;
+    }
+
+    return changed;
   };
 
   const getRectangleCells = (start: GridPoint, end: GridPoint, size: number, filled: boolean): GridPoint[] => {
@@ -2913,8 +3080,15 @@ export default function Home() {
     pageX: number, 
     pageY: number, 
     isClick: boolean = false,
-    isTouchEnd: boolean = false
+    isTouchEnd: boolean = false,
+    phase?: CanvasInteractionPhase
   ) => {
+    if (phase === 'end') {
+      resetPaintStroke();
+      setTooltipData(null);
+      return;
+    }
+
     // 如果是触摸结束或鼠标离开事件，隐藏提示
     if (isTouchEnd) {
       setTooltipData(null);
@@ -2977,7 +3151,11 @@ export default function Home() {
             floodFillErase(j, i, cellData.key);
             setIsEraseMode(false);
           } else {
-            applyCells(getBrushCells(j, i, eraserSize), transparentColorData);
+            if (phase === 'start' || phase === 'move') {
+              applyPaintStrokeAtPoint({ row: j, col: i }, transparentColorData, eraserSize, false, false);
+            } else {
+              applyCells(getBrushCells(j, i, eraserSize), transparentColorData);
+            }
           }
           setTooltipData(null);
           return;
@@ -3039,10 +3217,14 @@ export default function Home() {
         }
 
         if ((activeEditorTool === 'brush' || activeEditorTool === 'palette') && selectedPaintColor) {
-          applyCells(
-            expandMirroredCells(getBrushCells(j, i, brushSize), brushMirrorX, brushMirrorY),
-            selectedPaintColor,
-          );
+          if (phase === 'start' || phase === 'move') {
+            applyPaintStrokeAtPoint({ row: j, col: i }, selectedPaintColor, brushSize, brushMirrorX, brushMirrorY);
+          } else {
+            applyCells(
+              expandMirroredCells(getBrushCells(j, i, brushSize), brushMirrorX, brushMirrorY),
+              selectedPaintColor,
+            );
+          }
           setTooltipData(null);
           return;
         }
@@ -3955,6 +4137,13 @@ export default function Home() {
                   onChange={handleImportPaletteFile}
                   className="hidden"
                 />
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={stickerInputRef}
+                  onChange={handleStickerFileChange}
+                  className="hidden"
+                />
                 <canvas ref={originalCanvasRef} className="hidden" />
 
                 <div
@@ -4068,11 +4257,8 @@ export default function Home() {
                                 dragPaintMode={isManualColoringMode && (activeEditorTool === 'brush' || activeEditorTool === 'eraser')}
                               />
                             </div>
-                            {workspaceMode === 'preview' && previewSettings.brandText.trim() && previewSettings.brandOpacity > 0 && (
-                              <div
-                                className="preview-brand-strip pointer-events-none relative z-10 mt-2 flex min-h-[44px] items-center justify-end rounded-lg border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.72)] px-4 py-2 text-xs font-semibold text-[var(--text)] backdrop-blur"
-                                style={{ opacity: previewSettings.brandOpacity / 100 }}
-                              >
+                            {workspaceMode === 'preview' && previewSettings.brandText.trim() && (
+                              <div className="preview-brand-strip pointer-events-none relative z-10 mt-2 flex min-h-[44px] items-center justify-end rounded-lg border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.72)] px-4 py-2 text-xs font-semibold text-[var(--text)] backdrop-blur">
                                 {previewSettings.brandText}
                               </div>
                             )}
@@ -4164,6 +4350,12 @@ export default function Home() {
                     pendingLineStart={pendingLineStart}
                     pendingRectangleStart={pendingRectangleStart}
                     onCancelPendingShape={resetPendingEditorGestures}
+                    layers={editorLayers}
+                    activeLayerId={activeLayerId}
+                    onAddSticker={handleAddStickerRequest}
+                    onAddLayer={handleAddEditorLayer}
+                    onLayerSelect={handleLayerSelect}
+                    onToggleLayerVisible={handleToggleLayerVisible}
                   />
                 ) : workspaceMode === 'preview' ? (
                   <PreviewSidePanel

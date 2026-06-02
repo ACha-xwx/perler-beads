@@ -15,6 +15,13 @@ export type EditorTool =
   | 'selection';
 
 type SimpleColor = { key: string; color: string };
+type EditorLayerItem = {
+  id: string;
+  name: string;
+  type: 'base' | 'layer' | 'sticker';
+  visible: boolean;
+  locked: boolean;
+};
 type GridPoint = { row: number; col: number } | null;
 type SelectionArea = { startRow: number; startCol: number; endRow: number; endCol: number } | null;
 
@@ -67,6 +74,12 @@ interface EditorSidePanelProps {
   pendingLineStart: GridPoint;
   pendingRectangleStart: GridPoint;
   onCancelPendingShape: () => void;
+  layers: EditorLayerItem[];
+  activeLayerId: string;
+  onAddSticker: () => void;
+  onAddLayer: () => void;
+  onLayerSelect: (id: string) => void;
+  onToggleLayerVisible: (id: string) => void;
 }
 
 const toolItems: Array<{ key: EditorTool; label: string; icon: React.ReactNode }> = [
@@ -317,6 +330,12 @@ export function EditorSidePanel({
   pendingLineStart,
   pendingRectangleStart,
   onCancelPendingShape,
+  layers,
+  activeLayerId,
+  onAddSticker,
+  onAddLayer,
+  onLayerSelect,
+  onToggleLayerVisible,
 }: EditorSidePanelProps) {
   const displayColors = showFullPalette ? fullPaletteColors : currentColors;
   const activeToolName = {
@@ -466,26 +485,70 @@ export function EditorSidePanel({
           <div className="mb-3 flex items-center justify-between">
             <div className="text-sm font-bold">图层</div>
             <div className="flex items-center gap-1">
-              <button type="button" title="添加贴纸" aria-label="添加贴纸" className="grid h-7 w-7 place-items-center rounded-lg text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]">
+              <button
+                type="button"
+                title="添加贴纸"
+                aria-label="添加贴纸"
+                onClick={onAddSticker}
+                className="grid h-8 w-8 place-items-center rounded-lg border border-[rgba(var(--line-rgb),0.16)] bg-white/42 text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]"
+              >
                 <span className="text-base leading-none">✦</span>
               </button>
-              <button type="button" title="添加空白图层" className="grid h-7 w-7 place-items-center rounded-lg text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]">
+              <button
+                type="button"
+                title="添加空白图层"
+                aria-label="添加空白图层"
+                onClick={onAddLayer}
+                className="grid h-8 w-8 place-items-center rounded-lg border border-[rgba(var(--line-rgb),0.16)] bg-white/42 text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]"
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                   <path d="M12 5v14M5 12h14" />
                 </svg>
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-lg border border-[rgba(var(--line-rgb),0.14)] bg-white/55 px-2.5 py-2.5 text-xs">
-            <button type="button" title="显示" className="grid h-7 w-7 flex-shrink-0 place-items-center rounded-md text-[var(--muted)]">
-              <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-              </svg>
-            </button>
-            <span className="font-semibold text-[var(--text)]">主体</span>
-            <span className="ml-auto text-[var(--muted)] opacity-70">锁定</span>
-            <span className="text-[var(--muted)] opacity-60">复制</span>
+          <div className="space-y-2">
+            {layers.map(layer => {
+              const isActive = layer.id === activeLayerId;
+              return (
+                <button
+                  key={layer.id}
+                  type="button"
+                  onClick={() => onLayerSelect(layer.id)}
+                  className={`flex w-full items-center gap-2 rounded-lg border px-2.5 py-2.5 text-left text-xs transition ${
+                    isActive
+                      ? 'border-[rgba(var(--accent-rgb),0.42)] bg-[rgba(var(--accent-rgb),0.1)]'
+                      : 'border-[rgba(var(--line-rgb),0.14)] bg-white/55 hover:bg-white/72'
+                  }`}
+                >
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    title={layer.visible ? '隐藏' : '显示'}
+                    onClick={event => {
+                      event.stopPropagation();
+                      onToggleLayerVisible(layer.id);
+                    }}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onToggleLayerVisible(layer.id);
+                      }
+                    }}
+                    className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-md ${layer.visible ? 'text-[var(--muted)]' : 'text-[var(--muted)] opacity-35'}`}
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                    </svg>
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-semibold text-[var(--text)]">{layer.name}</span>
+                  {layer.locked && <span className="text-[var(--muted)] opacity-70">锁定</span>}
+                  {layer.type === 'sticker' && <span className="text-[var(--muted)] opacity-70">贴纸</span>}
+                </button>
+              );
+            })}
           </div>
         </PanelCard>
       </div>

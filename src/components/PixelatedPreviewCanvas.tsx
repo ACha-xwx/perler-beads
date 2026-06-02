@@ -3,6 +3,8 @@
 import React, { useRef, useEffect, TouchEvent, MouseEvent, useState } from 'react';
 import { MappedPixel } from '../utils/pixelation';
 
+export type CanvasInteractionPhase = 'start' | 'move' | 'end';
+
 const getCanvasSizeForGrid = (dims: { N: number; M: number }) => {
   const { N, M } = dims;
   const baseWidth = 500;
@@ -36,7 +38,8 @@ interface PixelatedPreviewCanvasProps {
     pageX: number,
     pageY: number,
     isClick: boolean,
-    isTouchEnd?: boolean
+    isTouchEnd?: boolean,
+    phase?: CanvasInteractionPhase
   ) => void;
   highlightColorKey?: string | null;
   onHighlightComplete?: () => void;
@@ -198,7 +201,7 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
   const handleMouseMove = (event: MouseEvent<HTMLCanvasElement>) => {
     if (isManualColoringMode && dragPaintMode && mousePaintRef.current) {
       event.preventDefault();
-      onInteraction(event.clientX, event.clientY, event.pageX, event.pageY, true);
+      onInteraction(event.clientX, event.clientY, event.pageX, event.pageY, true, false, 'move');
       return;
     }
 
@@ -220,16 +223,17 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
   // 鼠标离开时隐藏提示
   const handleMouseLeave = () => {
     mousePanRef.current = null;
+    const wasPainting = mousePaintRef.current;
     mousePaintRef.current = false;
     // 鼠标离开时总是隐藏tooltip
-    onInteraction(0, 0, 0, 0, false, true);
+    onInteraction(0, 0, 0, 0, false, true, wasPainting ? 'end' : undefined);
   };
 
   const handleMouseDown = (event: MouseEvent<HTMLCanvasElement>) => {
     if (isManualColoringMode && dragPaintMode && !panMode) {
       event.preventDefault();
       mousePaintRef.current = true;
-      onInteraction(event.clientX, event.clientY, event.pageX, event.pageY, true);
+      onInteraction(event.clientX, event.clientY, event.pageX, event.pageY, true, false, 'start');
       return;
     }
 
@@ -246,6 +250,9 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
 
   const handleMouseUp = () => {
     mousePanRef.current = null;
+    if (mousePaintRef.current) {
+      onInteraction(0, 0, 0, 0, false, true, 'end');
+    }
     mousePaintRef.current = false;
   };
 
@@ -277,7 +284,7 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
     if (isManualColoringMode && dragPaintMode && !panMode) {
       event.preventDefault();
       touchPaintRef.current = true;
-      onInteraction(touch.clientX, touch.clientY, touch.pageX, touch.pageY, true);
+      onInteraction(touch.clientX, touch.clientY, touch.pageX, touch.pageY, true, false, 'start');
       return;
     }
 
@@ -296,7 +303,7 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
     if (isManualColoringMode && dragPaintMode && touchPaintRef.current && !panMode) {
       event.preventDefault();
       touchMovedRef.current = true;
-      onInteraction(touch.clientX, touch.clientY, touch.pageX, touch.pageY, true);
+      onInteraction(touch.clientX, touch.clientY, touch.pageX, touch.pageY, true, false, 'move');
       return;
     }
     
@@ -329,6 +336,9 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
   // 触摸结束时不再自动隐藏提示框
   const handleTouchEnd = () => {
     const wasDragPainting = isManualColoringMode && dragPaintMode && touchPaintRef.current;
+    if (wasDragPainting) {
+      onInteraction(0, 0, 0, 0, false, true, 'end');
+    }
     // 检查是否是手动模式，并且触摸没有移动（判定为点击）
     if (!wasDragPainting && isManualColoringMode && !panMode && !touchMovedRef.current && touchStartPosRef.current) {
       // 使用触摸开始时的坐标来执行上色操作
