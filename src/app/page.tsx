@@ -221,6 +221,11 @@ const floatAnimation = `
     to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
   }
 
+  @keyframes panelRiseIn {
+    from { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.985); }
+    to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  }
+
   @keyframes toolPulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.22); }
     50% { box-shadow: 0 0 0 8px rgba(var(--accent-rgb), 0); }
@@ -957,6 +962,7 @@ const floatAnimation = `
     background: rgba(255,255,255,0.54);
     color: var(--text);
     font-size: 12px;
+    white-space: nowrap;
     transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, border-color 240ms ease;
   }
 
@@ -976,6 +982,203 @@ const floatAnimation = `
   .palette-save-button:hover {
     transform: translateY(-1px);
     box-shadow: 0 18px 36px rgba(var(--accent-rgb),0.28);
+  }
+
+  .mobile-command-bar {
+    animation: toolbarSlideUp 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .mobile-command-bar button,
+  .mobile-command-bar label,
+  .mode-tab,
+  .palette-series-button,
+  .palette-tab {
+    white-space: nowrap;
+  }
+
+  @media (max-width: 1023px) {
+    .mobile-workspace-shell {
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .mobile-canvas-column {
+      min-height: min(62vh, 620px);
+    }
+
+    .workspace-side-panel-shell {
+      height: min(44vh, 430px);
+      min-height: 280px;
+      flex: 0 0 auto;
+    }
+
+    .workspace-side-panel-shell .editor-side-panel {
+      animation-name: panelRiseIn;
+      border-radius: 18px;
+      box-shadow: 0 -18px 48px rgba(var(--shadow-rgb),0.12);
+    }
+
+    .editor-panel-card,
+    .preview-panel-card,
+    .focus-side-card,
+    .download-panel-card,
+    .settings-panel-card {
+      padding: 12px;
+    }
+
+    .editor-tool-rail {
+      left: 0.5rem;
+      max-height: calc(100% - 5.75rem);
+      gap: 2px;
+      border-radius: 14px;
+      padding: 4px;
+    }
+
+    .editor-tool-rail button {
+      min-height: 36px;
+      min-width: 36px;
+    }
+
+    .editor-tool-rail button:not(:first-child) {
+      height: 36px;
+      width: 36px;
+    }
+
+    .editor-color-swatch {
+      min-height: 38px;
+    }
+
+    .preview-board {
+      max-width: calc(100vw - 28px);
+    }
+
+    .canvas-scale-control {
+      bottom: 0.75rem;
+      max-width: calc(100% - 5.75rem);
+    }
+
+    .canvas-scale-control .control-range {
+      width: min(28vw, 96px);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .mode-switch {
+      max-width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .mode-switch::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mode-tab {
+      flex: 0 0 auto;
+    }
+
+    .mobile-canvas-column {
+      min-height: min(58vh, 560px);
+    }
+
+    .workspace-side-panel-shell {
+      height: min(48vh, 460px);
+      min-height: 300px;
+    }
+
+    .focus-bottom-palette {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    .focus-color-chip {
+      min-width: 68px;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+
+    .palette-modal {
+      max-width: 100%;
+    }
+
+    .custom-palette-editor {
+      height: min(88vh, 760px);
+      border-radius: 18px;
+    }
+
+    .custom-palette-editor .settings-head,
+    .download-settings-panel .settings-head {
+      padding: 14px 16px;
+    }
+
+    .custom-palette-editor .palette-body {
+      padding: 12px 14px 14px;
+    }
+
+    .custom-palette-toolbar {
+      grid-template-columns: minmax(0,1fr);
+      gap: 10px;
+      padding-bottom: 12px;
+    }
+
+    .custom-palette-series {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 6px;
+      padding-right: 0;
+      scrollbar-width: thin;
+    }
+
+    .custom-palette-series .palette-series-button {
+      width: auto;
+      min-width: max-content;
+      flex: 0 0 auto;
+    }
+
+    .palette-grid {
+      grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+      gap: 7px;
+    }
+
+    .palette-list {
+      grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    }
+
+    .palette-color-cell,
+    .palette-color-key {
+      min-height: 44px;
+    }
+
+    .palette-footer {
+      align-items: stretch;
+    }
+
+    .palette-footer > div {
+      width: 100%;
+    }
+
+    .palette-footer-button,
+    .palette-save-button {
+      min-height: 42px;
+      white-space: nowrap;
+    }
+
+    .download-settings-panel {
+      max-height: 90vh;
+      border-radius: 18px;
+    }
+
+    .download-settings-panel .download-body {
+      padding: 14px;
+    }
+
+    .download-option-row {
+      align-items: center;
+      gap: 10px;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -1012,7 +1215,8 @@ const floatAnimation = `
     .focus-current-bead,
     .focus-color-chip,
     .canvas-scale-control,
-    .preview-brand-strip {
+    .preview-brand-strip,
+    .mobile-command-bar {
       animation: none;
     }
 
@@ -1407,7 +1611,15 @@ function FocusSidePanel({
             <ToggleRow label="显示分割线" checked={focusState.showSectionLines} onChange={checked => onFocusStateChange(prev => ({ ...prev, showSectionLines: checked }))} />
             <label className="grid gap-1 text-[11px] text-[var(--muted)]">
               分割间隔 {focusState.gridSectionInterval} 格
-              <input type="range" min="5" max="20" value={focusState.gridSectionInterval} onChange={event => onFocusStateChange(prev => ({ ...prev, gridSectionInterval: Number(event.target.value) }))} className="accent-[rgb(var(--accent-rgb))]" />
+              <input
+                type="range"
+                min="5"
+                max="20"
+                value={focusState.gridSectionInterval}
+                onChange={event => onFocusStateChange(prev => ({ ...prev, gridSectionInterval: Number(event.target.value) }))}
+                className="control-range"
+                style={{ '--range-progress': `${((focusState.gridSectionInterval - 5) / 15) * 100}%` } as React.CSSProperties}
+              />
             </label>
             <div className="flex flex-wrap gap-2">
               {sectionColors.map(color => (
@@ -3910,7 +4122,12 @@ export default function Home() {
   };
 
   // 新增：处理颜色选择，同时管理模式切换
-  const handleColorSelect = (colorData: { key: string; color: string; isExternal?: boolean }) => {
+  const handleColorSelect = (colorData: { key: string; color: string; isExternal?: boolean } | null) => {
+    if (!colorData) {
+      setSelectedColor(null);
+      return;
+    }
+
     if (colorReplaceState.isActive && colorReplaceState.step === 'select-target' && colorReplaceState.sourceColor) {
       if (colorData.key !== TRANSPARENT_KEY) {
         handleColorReplace(colorReplaceState.sourceColor, colorData);
@@ -4512,9 +4729,9 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="relative flex min-h-0 flex-1">
-          <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1 gap-3 px-2 py-3 sm:px-4">
-            <div className="flex min-h-0 min-w-0 flex-1">
+        <div className="mobile-workspace-shell relative flex min-h-0 flex-1 lg:overflow-hidden">
+          <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1 flex-col gap-3 px-2 py-3 pb-24 sm:px-4 lg:flex-row lg:pb-3">
+            <div className="mobile-canvas-column flex min-h-0 min-w-0 flex-1">
               <main ref={mainRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
                 <input
                   type="file"
@@ -4727,7 +4944,7 @@ export default function Home() {
             </div>
 
             {mappedPixelData && gridDimensions && (
-              <div className="hidden min-h-0 w-[320px] flex-shrink-0 lg:flex">
+              <div className="workspace-side-panel-shell flex min-h-0 w-full flex-shrink-0 lg:w-[320px]">
                 {workspaceMode === 'edit' ? (
                   <EditorSidePanel
                     activeTool={activeEditorTool}
@@ -4823,6 +5040,49 @@ export default function Home() {
             <span className="hidden sm:inline">{gridDimensions ? `网格 ${gridDimensions.N} x ${gridDimensions.M}` : `${selectedColorSystem} ${selectedColorCount}`}</span>
           </div>
         </footer>
+
+        <nav className="mobile-command-bar fixed bottom-2 left-2 right-2 z-50 rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.82)] shadow-[0_18px_48px_rgba(var(--shadow-rgb),0.18)] backdrop-blur-2xl md:hidden" aria-label="手机快捷操作">
+          <div className="flex gap-2 overflow-x-auto p-2">
+            <label className="glass-action relative flex min-h-[42px] flex-[0_0_auto] cursor-pointer items-center justify-center overflow-hidden px-4 text-xs font-medium">
+              <input
+                type="file"
+                accept={IMPORT_FILE_ACCEPT}
+                onChange={handleFileChange}
+                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
+              />
+              <span className="pointer-events-none relative z-0">导入</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setIsCustomPaletteEditorOpen(true)}
+              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
+            >
+              色板
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsDownloadSettingsOpen(true)}
+              disabled={!mappedPixelData || !gridDimensions || activeBeadPalette.length === 0}
+              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              下载
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
+            >
+              保存
+            </button>
+            <button
+              type="button"
+              onClick={handleRestoreDraft}
+              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
+            >
+              恢复
+            </button>
+          </div>
+        </nav>
       </div>
 
       {isAppearancePanelOpen && (
@@ -4887,7 +5147,8 @@ export default function Home() {
                           max="125"
                           value={appearanceSettings.scale}
                           onChange={event => handleAppearanceChange('scale', Number(event.target.value))}
-                          className="w-full accent-[rgb(var(--accent-rgb))]"
+                          className="control-range w-full"
+                          style={{ '--range-progress': `${((appearanceSettings.scale - 85) / 40) * 100}%` } as React.CSSProperties}
                         />
                       </label>
                     </div>
@@ -5111,7 +5372,8 @@ export default function Home() {
                     max="12"
                     value={stickerDraft.size}
                     onChange={event => setStickerDraft(prev => ({ ...prev, size: Number(event.target.value) }))}
-                    className="accent-[rgb(var(--accent-rgb))]"
+                    className="control-range"
+                    style={{ '--range-progress': `${((stickerDraft.size - 2) / 10) * 100}%` } as React.CSSProperties}
                   />
                 </label>
               </div>

@@ -110,7 +110,7 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
   };
 
   return (
-    <div className="palette-lab settings-shell flex h-[min(82vh,780px)] w-full flex-col overflow-hidden rounded-[22px]">
+    <div className="custom-palette-editor palette-lab settings-shell flex h-[min(82vh,780px)] w-full flex-col overflow-hidden rounded-[22px]">
       <div className="palette-lab-head settings-head flex items-start justify-between gap-4 border-b border-[rgba(var(--line-rgb),0.16)] px-6 py-5">
         <div>
           <div className="text-base font-semibold">色板设置</div>
@@ -129,8 +129,8 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
         </button>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] px-6 pb-5 pt-4">
-        <div className="palette-toolbar grid gap-3 border-b border-[rgba(var(--line-rgb),0.16)] pb-4 lg:grid-cols-[auto_auto_minmax(240px,1fr)]">
+      <div className="palette-body grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] px-6 pb-5 pt-4">
+        <div className="custom-palette-toolbar palette-toolbar grid gap-3 border-b border-[rgba(var(--line-rgb),0.16)] pb-4 lg:grid-cols-[auto_auto_minmax(240px,1fr)]">
           <div className="flex flex-wrap gap-1 rounded-xl border border-[rgba(var(--line-rgb),0.16)] bg-white/50 p-1">
             {colorSystemOptions.map(option => (
               <button
@@ -192,7 +192,7 @@ const CustomPaletteEditor: React.FC<CustomPaletteEditorProps> = ({
         </div>
 
         <div className="grid min-h-0 gap-4 py-4 md:grid-cols-[136px_minmax(0,1fr)]">
-          <nav className="palette-series-list min-h-0 overflow-auto pr-1">
+          <nav className="custom-palette-series palette-series-list min-h-0 overflow-auto pr-1">
             <button
               type="button"
               onClick={() => setActiveSeries('ALL')}

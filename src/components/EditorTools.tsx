@@ -43,7 +43,7 @@ interface EditorSidePanelProps {
   fullPaletteColors: SimpleColor[];
   showFullPalette: boolean;
   onToggleFullPalette: () => void;
-  onColorSelect: (color: SimpleColor) => void;
+  onColorSelect: (color: SimpleColor | null) => void;
   onHighlightColor: (hex: string) => void;
   brushSize: number;
   onBrushSizeChange: (size: number) => void;
@@ -476,6 +476,12 @@ export function EditorSidePanel({
                   key={`${color.key}-${color.color}`}
                   type="button"
                   onClick={() => {
+                    if (isSelected) {
+                      onHighlightColor(color.color);
+                      onColorSelect(null);
+                      return;
+                    }
+
                     onHighlightColor(color.color);
                     onColorSelect(color);
                   }}

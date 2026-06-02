@@ -83,7 +83,7 @@ const DownloadSettingsModal: React.FC<DownloadSettingsModalProps> = ({
       style={themeStyle}
     >
       <div className="palette-modal w-full max-w-[680px]">
-        <div className="palette-lab settings-shell flex max-h-[88vh] flex-col overflow-hidden rounded-[22px]">
+        <div className="download-settings-panel palette-lab settings-shell flex max-h-[88vh] flex-col overflow-hidden rounded-[22px]">
           <div className="palette-lab-head settings-head flex items-start justify-between gap-4 border-b border-[rgba(var(--line-rgb),0.16)] px-6 py-5">
             <div>
               <div className="text-base font-semibold">下载图纸设置</div>
@@ -97,7 +97,7 @@ const DownloadSettingsModal: React.FC<DownloadSettingsModalProps> = ({
             </button>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
+          <div className="download-body min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
             <section className="download-panel-card">
               <label className="grid gap-2 text-sm">
                 <span className="font-medium text-[var(--text)]">作者署名</span>
