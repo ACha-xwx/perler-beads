@@ -145,7 +145,8 @@ interface FocusColorInfo {
   completed: number;
 }
 
-const DEFAULT_GRANULARITY = 100;
+const DEFAULT_GRANULARITY = 51;
+const MERGE_THRESHOLD_HELP = '把相近颜色合并成同一色块。0 更保留细节，越高越平滑、颜色越少。';
 const DRAFT_STORAGE_KEY = 'beadforgeDraft';
 const APPEARANCE_STORAGE_KEY = 'beadforgeAppearance';
 const APPEARANCE_VERSION = 2;
@@ -5021,6 +5022,7 @@ export default function Home() {
                         <label className="grid gap-1">
                           颜色合并阈值
                           <input id="similarityThresholdInput" type="number" value={similarityThresholdInput} onChange={handleSimilarityThresholdInputChange} min="0" max="100" className="rounded-lg border border-[rgba(var(--line-rgb),0.22)] bg-white/68 px-2 py-2 text-xs text-[var(--text)] outline-none focus:border-[rgba(var(--accent-rgb),0.55)]" />
+                          <span className="text-[11px] leading-5 text-[var(--muted)]">{MERGE_THRESHOLD_HELP}</span>
                         </label>
                         <button type="button" onClick={handleConfirmParameters} className="glass-action glass-action-primary min-h-[40px] w-full px-3 font-medium">应用参数</button>
                         <button type="button" onClick={handleAutoRemoveBackground} className="glass-action min-h-[40px] w-full px-3 font-medium">一键去背景</button>
@@ -5193,6 +5195,7 @@ export default function Home() {
                         <label className="grid gap-1 text-[11px] text-[var(--muted)]">
                           颜色合并阈值
                           <input id="similarityThresholdInput" type="number" value={similarityThresholdInput} onChange={handleSimilarityThresholdInputChange} min="0" max="100" className="rounded-lg border border-[rgba(var(--line-rgb),0.22)] bg-white/68 px-2 py-2 text-xs text-[var(--text)] outline-none focus:border-[rgba(var(--accent-rgb),0.55)]" />
+                          <span className="leading-5">{MERGE_THRESHOLD_HELP}</span>
                         </label>
                       </div>
                       <button type="button" onClick={handleConfirmParameters} className="glass-action glass-action-primary min-h-[40px] w-full px-3 text-xs font-medium">应用参数</button>
