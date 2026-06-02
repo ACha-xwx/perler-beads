@@ -49,3 +49,4 @@ public/workbox-*.js.map
 public/worker-*.js.map
 public/fallback-*.js
 /origins
+/tmp-visual-check

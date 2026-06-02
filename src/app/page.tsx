@@ -241,6 +241,11 @@ const floatAnimation = `
     to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
   }
 
+  @keyframes previewPaperSettle {
+    from { opacity: 0; transform: translateY(14px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
   @keyframes beadShimmer {
     from { background-position: -120% 0; }
     to { background-position: 220% 0; }
@@ -277,12 +282,12 @@ const floatAnimation = `
   }
 
   .animate-float {
-    animation: beadFloat 4.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    animation: beadFloat 5.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
     will-change: transform;
   }
 
   .workspace-enter {
-    animation: stageIn 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: stageIn 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .glass-action {
@@ -322,7 +327,7 @@ const floatAnimation = `
   }
 
   .glass-action:hover::after {
-    animation: sweepGlow 900ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: sweepGlow 1200ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .glass-action-primary {
@@ -339,7 +344,7 @@ const floatAnimation = `
       rgba(255,255,255,0.66);
     border-color: rgba(var(--accent-rgb), 0.44);
     color: var(--text);
-    animation: pulseRing 4s ease-in-out infinite;
+    animation: pulseRing 5.2s ease-in-out infinite;
   }
 
   .glass-panel {
@@ -357,7 +362,7 @@ const floatAnimation = `
       radial-gradient(circle at 50% 48%, rgba(var(--accent-rgb), 0.09), transparent 34%),
       linear-gradient(135deg, var(--page-a), var(--page-b) 52%, var(--page-c));
     background-size: 44px 44px, 36px 36px, auto, auto;
-    animation: gridDrift 30s linear infinite;
+    animation: gridDrift 38s linear infinite;
   }
 
   .theme-swatch-active {
@@ -365,15 +370,15 @@ const floatAnimation = `
   }
 
   .install-pwa-button {
-    animation: installFloat 5.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    animation: installFloat 6.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   }
 
   .mode-tab {
-    animation: cardLiftIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: cardLiftIn 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .editor-tool-rail {
-    animation: railSlideIn 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: railSlideIn 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--line-rgb),0.38) transparent;
   }
@@ -401,7 +406,7 @@ const floatAnimation = `
   }
 
   .editor-side-panel {
-    animation: panelSlideIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: panelSlideIn 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .editor-panel-card,
@@ -422,7 +427,7 @@ const floatAnimation = `
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.74), 0 18px 44px rgba(var(--shadow-rgb),0.11);
     backdrop-filter: blur(16px) saturate(1.15);
     -webkit-backdrop-filter: blur(16px) saturate(1.15);
-    animation: cardLiftIn 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: cardLiftIn 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .preview-stage,
@@ -434,7 +439,29 @@ const floatAnimation = `
   }
 
   .preview-board {
-    animation: previewBoardIn 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: previewBoardIn 780ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .preview-board::before {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 12% 18%, rgba(255,255,255,0.34), transparent 28%),
+      radial-gradient(circle at 88% 82%, rgba(var(--accent-rgb),0.12), transparent 30%);
+    opacity: 0.72;
+  }
+
+  .preview-art-surface {
+    transform-origin: center center;
+    animation: previewPaperSettle 840ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .preview-signature-zone {
+    animation: brandStripIn 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: 120ms;
   }
 
   .preview-art {
@@ -458,7 +485,7 @@ const floatAnimation = `
       linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
     background-size: 18px 18px, 22px 22px, 180% 100%;
     mix-blend-mode: screen;
-    animation: beadShimmer 4.6s ease-in-out infinite;
+    animation: beadShimmer 6.2s ease-in-out infinite;
   }
 
   .preview-material-enamel::after {
@@ -473,7 +500,7 @@ const floatAnimation = `
   }
 
   .floating-minimap {
-    animation: minimapIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: minimapIn 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
     touch-action: none;
   }
 
@@ -487,26 +514,26 @@ const floatAnimation = `
   }
 
   .download-option-row {
-    animation: optionRowIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: optionRowIn 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .focus-bottom-palette {
-    animation: toolbarSlideUp 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: toolbarSlideUp 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .focus-status-bar,
   .focus-progress-bar,
   .focus-toolbar {
-    animation: toolbarSlideUp 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: toolbarSlideUp 580ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .focus-current-bead {
-    animation: focusBeadPulse 3.8s ease-in-out infinite;
+    animation: focusBeadPulse 5.2s ease-in-out infinite;
   }
 
   .focus-color-chip {
-    animation: focusChipPop 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, border-color 240ms ease, box-shadow 240ms ease, opacity 240ms ease;
+    animation: focusChipPop 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1), background 320ms ease, border-color 320ms ease, box-shadow 320ms ease, opacity 320ms ease;
   }
 
   .focus-color-chip:hover {
@@ -523,11 +550,11 @@ const floatAnimation = `
   }
 
   .canvas-scale-control {
-    animation: toolbarSlideUp 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: toolbarSlideUp 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .canvas-scale-control button {
-    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), background 220ms ease, color 220ms ease;
+    transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1), background 320ms ease, color 320ms ease;
   }
 
   .canvas-scale-control button:hover {
@@ -535,7 +562,7 @@ const floatAnimation = `
   }
 
   .preview-brand-strip {
-    animation: brandStripIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: brandStripIn 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .settings-panel-card {
@@ -572,7 +599,7 @@ const floatAnimation = `
     border-radius: 999px;
     border: 1px solid rgba(var(--line-rgb),0.26);
     background: rgba(255,255,255,0.35);
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), border-color 240ms ease, background 240ms ease, box-shadow 240ms ease;
+    transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1), border-color 360ms ease, background 360ms ease, box-shadow 360ms ease;
   }
 
   .theme-toggle-on {
@@ -590,7 +617,7 @@ const floatAnimation = `
     border-radius: 999px;
     background: rgba(255,255,255,0.95);
     box-shadow: 0 6px 14px rgba(var(--shadow-rgb),0.18);
-    transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease;
+    transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1), background 360ms ease;
   }
 
   .theme-toggle-on .theme-toggle-knob {
@@ -605,8 +632,8 @@ const floatAnimation = `
     border-radius: 8px;
     border: 1px solid rgba(0,0,0,0.16);
     box-shadow: none;
-    animation: swatchPop 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    transition: transform 230ms cubic-bezier(0.16, 1, 0.3, 1), border-color 230ms ease, box-shadow 230ms ease;
+    animation: swatchPop 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1), border-color 320ms ease, box-shadow 320ms ease;
   }
 
   .editor-color-swatch:hover {
@@ -622,7 +649,7 @@ const floatAnimation = `
   .editor-side-panel button,
   .download-panel-card button,
   .settings-panel-card button {
-    transition: transform 230ms cubic-bezier(0.16, 1, 0.3, 1), background 230ms ease, border-color 230ms ease, color 230ms ease, opacity 230ms ease;
+    transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1), background 320ms ease, border-color 320ms ease, color 320ms ease, opacity 320ms ease;
   }
 
   .editor-side-panel button:hover,
@@ -638,11 +665,11 @@ const floatAnimation = `
   }
 
   .palette-backdrop {
-    animation: paletteBackdropIn 280ms ease-out both;
+    animation: paletteBackdropIn 420ms ease-out both;
   }
 
   .palette-modal {
-    animation: palettePanelIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: palettePanelIn 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .palette-lab {
@@ -682,7 +709,7 @@ const floatAnimation = `
     border: 1px solid rgba(var(--line-rgb),0.18);
     background: rgba(255,255,255,0.54);
     color: var(--muted);
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, border-color 240ms ease, color 240ms ease;
+    transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1), background 340ms ease, border-color 340ms ease, color 340ms ease;
   }
 
   .palette-icon-button:hover,
@@ -701,7 +728,7 @@ const floatAnimation = `
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, color 240ms ease;
+    transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1), background 340ms ease, color 340ms ease;
   }
 
   .palette-tab:hover {
@@ -713,7 +740,7 @@ const floatAnimation = `
   .palette-tab-active {
     background: rgba(var(--accent-rgb),0.14);
     color: rgb(var(--accent-rgb));
-    animation: paletteTabPop 360ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: paletteTabPop 520ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .palette-series-list,
@@ -734,7 +761,7 @@ const floatAnimation = `
     color: var(--muted);
     font-size: 12px;
     white-space: nowrap;
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, color 240ms ease;
+    transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1), background 340ms ease, color 340ms ease;
   }
 
   .palette-series-button span:first-child {
@@ -784,9 +811,9 @@ const floatAnimation = `
     background: var(--cell-color);
     color: rgba(20,20,18,0.74);
     box-shadow: none;
-    animation: paletteCellIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: min(calc(var(--cell-index) * 18ms), 360ms);
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), border-color 240ms ease, box-shadow 240ms ease;
+    animation: paletteCellIn 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: min(calc(var(--cell-index) * 22ms), 480ms);
+    transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1), border-color 340ms ease, box-shadow 340ms ease;
   }
 
   .palette-color-cell::before {
@@ -909,6 +936,8 @@ const floatAnimation = `
     .settings-panel-card,
     .editor-color-swatch,
     .preview-board,
+    .preview-art-surface,
+    .preview-signature-zone,
     .preview-material-glitter::after,
     .floating-minimap,
     .download-option-row,
@@ -918,6 +947,7 @@ const floatAnimation = `
     .focus-toolbar,
     .focus-current-bead,
     .focus-color-chip,
+    .canvas-scale-control,
     .preview-brand-strip {
       animation: none;
     }
@@ -1087,7 +1117,8 @@ function CanvasScaleControl({
   const setScale = (value: number) => onChange(Math.max(0.5, Math.min(2, Number(value.toFixed(2)))));
 
   return (
-    <div className="canvas-scale-control absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.78)] px-2.5 py-2 text-xs text-[var(--text)] shadow-[0_16px_38px_rgba(var(--shadow-rgb),0.14)] backdrop-blur-xl">
+    <div className="canvas-scale-control absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.78)] px-2.5 py-2 text-xs text-[var(--text)] shadow-[0_16px_38px_rgba(var(--shadow-rgb),0.14)] backdrop-blur-xl" aria-label="画布缩放">
+      <span className="hidden text-[10px] font-medium text-[var(--muted)] sm:inline">画布缩放</span>
       <button type="button" onClick={() => setScale(scale - 0.1)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/62" aria-label="缩小画布">-</button>
       <input
         type="range"
@@ -4500,12 +4531,12 @@ export default function Home() {
                           <div
                             className={`preview-board relative m-auto overflow-hidden border border-[rgba(var(--line-rgb),0.2)] shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)] ${
                               workspaceMode === 'preview'
-                                ? `preview-material-${previewSettings.material} rounded-[22px] p-5 sm:p-7`
+                                ? `preview-material-${previewSettings.material} rounded-[22px] px-5 pb-4 pt-5 sm:px-7 sm:pb-5 sm:pt-7`
                                 : 'rounded-xl p-2'
                             }`}
                             style={workspaceMode === 'preview' ? previewBoardStyle : { background: 'rgba(255,255,255,0.7)' }}
                           >
-                            <div className="relative z-10">
+                            <div className="relative z-10 flex flex-col items-center">
                               <div
                                 className={`preview-art-surface relative z-10 overflow-hidden border border-[rgba(var(--line-rgb),0.22)] bg-white ${
                                   workspaceMode === 'preview' ? 'p-0' : ''
@@ -4547,9 +4578,11 @@ export default function Home() {
                                   );
                                 })}
                               </div>
-                              {workspaceMode === 'preview' && previewSettings.brandText.trim() && (
-                                <div className="preview-brand-strip pointer-events-none relative z-10 mt-4 flex min-h-[34px] items-center justify-center px-3 py-1.5 text-xs font-semibold italic tracking-[0.18em] text-[var(--text)]">
-                                  {previewSettings.brandText}
+                              {workspaceMode === 'preview' && (
+                                <div className={`preview-signature-zone pointer-events-none relative z-10 mt-3 flex min-h-[28px] w-full items-center justify-center rounded-b-[16px] px-4 text-center text-[12px] font-semibold text-[var(--text)] ${previewSettings.brandText.trim() ? 'opacity-100' : 'opacity-0'}`}>
+                                  <span className="preview-brand-strip max-w-full truncate">
+                                    {previewSettings.brandText.trim() || ' '}
+                                  </span>
                                 </div>
                               )}
                             </div>
