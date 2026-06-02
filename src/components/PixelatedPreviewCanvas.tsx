@@ -44,6 +44,7 @@ interface PixelatedPreviewCanvasProps {
   highlightColorKey?: string | null;
   panMode?: boolean;
   dragPaintMode?: boolean;
+  displayScale?: number;
 }
 
 // 绘制像素化画布的函数
@@ -137,6 +138,7 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
   highlightColorKey,
   panMode = false,
   dragPaintMode = false,
+  displayScale = 1,
 }) => {
   const [darkModeState, setDarkModeState] = useState<boolean | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number; pageX: number; pageY: number } | null>(null);
@@ -347,6 +349,18 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
     touchPaintRef.current = false;
   };
 
+  const displaySize = gridDimensions ? getCanvasSizeForGrid(gridDimensions) : null;
+  const canvasDisplayStyle: React.CSSProperties = {
+    imageRendering: 'pixelated',
+    touchAction: panMode || dragPaintMode ? 'none' : 'auto',
+    maxWidth: 'none',
+  };
+
+  if (displaySize) {
+    canvasDisplayStyle.width = `${Math.max(1, Math.round(displaySize.width * displayScale))}px`;
+    canvasDisplayStyle.height = `${Math.max(1, Math.round(displaySize.height * displayScale))}px`;
+  }
+
   return (
     <canvas
       ref={canvasRef}
@@ -362,10 +376,7 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
       className={`border border-gray-300 dark:border-gray-600 max-w-full h-auto rounded block ${
         panMode ? 'cursor-grab active:cursor-grabbing' : (isManualColoringMode ? 'cursor-pointer' : 'cursor-grab')
       }`}
-      style={{
-        imageRendering: 'pixelated',
-        touchAction: panMode || dragPaintMode ? 'none' : 'auto',
-      }}
+      style={canvasDisplayStyle}
     />
   );
 };

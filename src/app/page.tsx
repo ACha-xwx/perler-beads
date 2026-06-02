@@ -277,12 +277,12 @@ const floatAnimation = `
   }
 
   .animate-float {
-    animation: beadFloat 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    animation: beadFloat 4.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
     will-change: transform;
   }
 
   .workspace-enter {
-    animation: stageIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: stageIn 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .glass-action {
@@ -298,7 +298,7 @@ const floatAnimation = `
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.68), 0 12px 28px rgba(var(--shadow-rgb), 0.09);
     backdrop-filter: blur(18px) saturate(1.25);
     -webkit-backdrop-filter: blur(18px) saturate(1.25);
-    transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), border-color 240ms ease, box-shadow 240ms ease, background 240ms ease;
   }
 
   .glass-action:hover {
@@ -322,7 +322,7 @@ const floatAnimation = `
   }
 
   .glass-action:hover::after {
-    animation: sweepGlow 620ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: sweepGlow 900ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .glass-action-primary {
@@ -339,7 +339,7 @@ const floatAnimation = `
       rgba(255,255,255,0.66);
     border-color: rgba(var(--accent-rgb), 0.44);
     color: var(--text);
-    animation: pulseRing 2.8s ease-in-out infinite;
+    animation: pulseRing 4s ease-in-out infinite;
   }
 
   .glass-panel {
@@ -357,7 +357,7 @@ const floatAnimation = `
       radial-gradient(circle at 50% 48%, rgba(var(--accent-rgb), 0.09), transparent 34%),
       linear-gradient(135deg, var(--page-a), var(--page-b) 52%, var(--page-c));
     background-size: 44px 44px, 36px 36px, auto, auto;
-    animation: gridDrift 18s linear infinite;
+    animation: gridDrift 30s linear infinite;
   }
 
   .theme-swatch-active {
@@ -365,15 +365,15 @@ const floatAnimation = `
   }
 
   .install-pwa-button {
-    animation: installFloat 3.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    animation: installFloat 5.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
   }
 
   .mode-tab {
-    animation: cardLiftIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: cardLiftIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .editor-tool-rail {
-    animation: railSlideIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: railSlideIn 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
     scrollbar-width: thin;
     scrollbar-color: rgba(var(--line-rgb),0.38) transparent;
   }
@@ -391,7 +391,7 @@ const floatAnimation = `
     background: radial-gradient(circle, rgba(var(--accent-rgb),0.22), transparent 70%);
     opacity: 0;
     transform: scale(0.65);
-    transition: opacity 180ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 260ms ease, transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
     pointer-events: none;
   }
 
@@ -401,7 +401,7 @@ const floatAnimation = `
   }
 
   .editor-side-panel {
-    animation: panelSlideIn 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: panelSlideIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .editor-panel-card,
@@ -422,7 +422,7 @@ const floatAnimation = `
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.74), 0 18px 44px rgba(var(--shadow-rgb),0.11);
     backdrop-filter: blur(16px) saturate(1.15);
     -webkit-backdrop-filter: blur(16px) saturate(1.15);
-    animation: cardLiftIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: cardLiftIn 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .preview-stage,
@@ -434,7 +434,7 @@ const floatAnimation = `
   }
 
   .preview-board {
-    animation: previewBoardIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: previewBoardIn 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .preview-art {
@@ -458,7 +458,7 @@ const floatAnimation = `
       linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
     background-size: 18px 18px, 22px 22px, 180% 100%;
     mix-blend-mode: screen;
-    animation: beadShimmer 2.8s ease-in-out infinite;
+    animation: beadShimmer 4.6s ease-in-out infinite;
   }
 
   .preview-material-enamel::after {
@@ -473,12 +473,12 @@ const floatAnimation = `
   }
 
   .floating-minimap {
-    animation: minimapIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: minimapIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
     touch-action: none;
   }
 
   .floating-minimap canvas {
-    transition: filter 180ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: filter 260ms ease, transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .floating-minimap canvas:hover {
@@ -487,26 +487,26 @@ const floatAnimation = `
   }
 
   .download-option-row {
-    animation: optionRowIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: optionRowIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .focus-bottom-palette {
-    animation: toolbarSlideUp 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: toolbarSlideUp 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .focus-status-bar,
   .focus-progress-bar,
   .focus-toolbar {
-    animation: toolbarSlideUp 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: toolbarSlideUp 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .focus-current-bead {
-    animation: focusBeadPulse 2.4s ease-in-out infinite;
+    animation: focusBeadPulse 3.8s ease-in-out infinite;
   }
 
   .focus-color-chip {
-    animation: focusChipPop 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+    animation: focusChipPop 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, border-color 240ms ease, box-shadow 240ms ease, opacity 240ms ease;
   }
 
   .focus-color-chip:hover {
@@ -522,9 +522,20 @@ const floatAnimation = `
     will-change: transform;
   }
 
+  .canvas-scale-control {
+    animation: toolbarSlideUp 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .canvas-scale-control button {
+    transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), background 220ms ease, color 220ms ease;
+  }
+
+  .canvas-scale-control button:hover {
+    transform: translateY(-1px);
+  }
+
   .preview-brand-strip {
-    animation: brandStripIn 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    border-top: 1px solid rgba(var(--line-rgb),0.14);
+    animation: brandStripIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .settings-panel-card {
@@ -561,7 +572,7 @@ const floatAnimation = `
     border-radius: 999px;
     border: 1px solid rgba(var(--line-rgb),0.26);
     background: rgba(255,255,255,0.35);
-    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), border-color 240ms ease, background 240ms ease, box-shadow 240ms ease;
   }
 
   .theme-toggle-on {
@@ -579,7 +590,7 @@ const floatAnimation = `
     border-radius: 999px;
     background: rgba(255,255,255,0.95);
     box-shadow: 0 6px 14px rgba(var(--shadow-rgb),0.18);
-    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease;
+    transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease;
   }
 
   .theme-toggle-on .theme-toggle-knob {
@@ -594,8 +605,8 @@ const floatAnimation = `
     border-radius: 8px;
     border: 1px solid rgba(0,0,0,0.16);
     box-shadow: none;
-    animation: swatchPop 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), border-color 150ms ease, box-shadow 150ms ease;
+    animation: swatchPop 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transition: transform 230ms cubic-bezier(0.16, 1, 0.3, 1), border-color 230ms ease, box-shadow 230ms ease;
   }
 
   .editor-color-swatch:hover {
@@ -611,7 +622,7 @@ const floatAnimation = `
   .editor-side-panel button,
   .download-panel-card button,
   .settings-panel-card button {
-    transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), background 150ms ease, border-color 150ms ease, color 150ms ease, opacity 150ms ease;
+    transition: transform 230ms cubic-bezier(0.16, 1, 0.3, 1), background 230ms ease, border-color 230ms ease, color 230ms ease, opacity 230ms ease;
   }
 
   .editor-side-panel button:hover,
@@ -627,11 +638,11 @@ const floatAnimation = `
   }
 
   .palette-backdrop {
-    animation: paletteBackdropIn 180ms ease-out both;
+    animation: paletteBackdropIn 280ms ease-out both;
   }
 
   .palette-modal {
-    animation: palettePanelIn 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: palettePanelIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .palette-lab {
@@ -671,7 +682,7 @@ const floatAnimation = `
     border: 1px solid rgba(var(--line-rgb),0.18);
     background: rgba(255,255,255,0.54);
     color: var(--muted);
-    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease, color 160ms ease;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, border-color 240ms ease, color 240ms ease;
   }
 
   .palette-icon-button:hover,
@@ -690,7 +701,7 @@ const floatAnimation = `
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
-    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, color 160ms ease;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, color 240ms ease;
   }
 
   .palette-tab:hover {
@@ -702,7 +713,7 @@ const floatAnimation = `
   .palette-tab-active {
     background: rgba(var(--accent-rgb),0.14);
     color: rgb(var(--accent-rgb));
-    animation: paletteTabPop 230ms cubic-bezier(0.16, 1, 0.3, 1);
+    animation: paletteTabPop 360ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .palette-series-list,
@@ -723,7 +734,7 @@ const floatAnimation = `
     color: var(--muted);
     font-size: 12px;
     white-space: nowrap;
-    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, color 160ms ease;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, color 240ms ease;
   }
 
   .palette-series-button span:first-child {
@@ -773,9 +784,9 @@ const floatAnimation = `
     background: var(--cell-color);
     color: rgba(20,20,18,0.74);
     box-shadow: none;
-    animation: paletteCellIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: min(calc(var(--cell-index) * 12ms), 260ms);
-    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), border-color 160ms ease, box-shadow 160ms ease;
+    animation: paletteCellIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: min(calc(var(--cell-index) * 18ms), 360ms);
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), border-color 240ms ease, box-shadow 240ms ease;
   }
 
   .palette-color-cell::before {
@@ -838,7 +849,7 @@ const floatAnimation = `
     color: rgba(var(--accent-rgb),0.92);
     opacity: 0;
     transform: scale(0.7) rotate(-12deg);
-    transition: opacity 150ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 230ms ease, transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .palette-color-cell-selected .palette-color-check {
@@ -855,7 +866,7 @@ const floatAnimation = `
     background: rgba(255,255,255,0.54);
     color: var(--text);
     font-size: 12px;
-    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), background 240ms ease, border-color 240ms ease;
   }
 
   .palette-footer-button:hover {
@@ -989,10 +1000,12 @@ function BeadLogo({ compact = false }: { compact?: boolean }) {
 
 function ToggleRow({
   label,
+  helper,
   checked,
   onChange,
 }: {
   label: string;
+  helper?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
@@ -1003,7 +1016,10 @@ function ToggleRow({
       className="flex w-full items-center justify-between rounded-xl border border-[rgba(var(--line-rgb),0.14)] bg-white/42 px-3 py-2.5 text-left transition hover:bg-white/66"
       aria-pressed={checked}
     >
-      <span className="text-xs font-semibold text-[var(--text)]">{label}</span>
+      <span>
+        <span className="block text-xs font-semibold text-[var(--text)]">{label}</span>
+        {helper && <span className="mt-0.5 block text-[11px] leading-4 text-[var(--muted)]">{helper}</span>}
+      </span>
       <span className={`theme-toggle ${checked ? 'theme-toggle-on' : ''}`}>
         <span className="theme-toggle-knob" />
       </span>
@@ -1013,8 +1029,10 @@ function ToggleRow({
 
 function StickerMark({
   sticker,
+  viewScale = 1,
 }: {
   sticker: StickerInstance;
+  viewScale?: number;
 }) {
   const shapeClass = sticker.shape === 'circle'
     ? 'rounded-full'
@@ -1023,7 +1041,7 @@ function StickerMark({
       : sticker.shape === 'star'
         ? 'rounded-[4px]'
         : 'rounded-[45%_45%_35%_35%]';
-  const size = Math.max(18, sticker.size * 8);
+  const size = Math.max(18, sticker.size * 8) * viewScale;
   const style: React.CSSProperties = {
     width: size,
     height: size,
@@ -1057,6 +1075,33 @@ function StickerMark({
   }
 
   return <span className={`block border-2 shadow-sm ${shapeClass}`} style={style} />;
+}
+
+function CanvasScaleControl({
+  scale,
+  onChange,
+}: {
+  scale: number;
+  onChange: (scale: number) => void;
+}) {
+  const setScale = (value: number) => onChange(Math.max(0.5, Math.min(2, Number(value.toFixed(2)))));
+
+  return (
+    <div className="canvas-scale-control absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.78)] px-2.5 py-2 text-xs text-[var(--text)] shadow-[0_16px_38px_rgba(var(--shadow-rgb),0.14)] backdrop-blur-xl">
+      <button type="button" onClick={() => setScale(scale - 0.1)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/62" aria-label="缩小画布">-</button>
+      <input
+        type="range"
+        min="0.5"
+        max="2"
+        step="0.05"
+        value={scale}
+        onChange={event => setScale(Number(event.target.value))}
+        className="w-28 accent-[rgb(var(--accent-rgb))]"
+      />
+      <button type="button" onClick={() => setScale(scale + 0.1)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/62" aria-label="放大画布">+</button>
+      <button type="button" onClick={() => setScale(1)} className="min-w-12 rounded-lg px-2 py-1 font-mono text-[11px] tabular-nums hover:bg-white/62">{Math.round(scale * 100)}%</button>
+    </div>
+  );
 }
 
 function PreviewSidePanel({
@@ -1093,9 +1138,16 @@ function PreviewSidePanel({
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
         <section className="preview-panel-card">
           <div className="mb-3 flex items-center justify-between">
-            <div className="text-sm font-bold">预览图</div>
+            <div>
+              <div className="text-sm font-bold">熨烫预览</div>
+              <div className="mt-1 text-[11px] leading-4 text-[var(--muted)]">预览拼豆熨烫后的真实效果，可调整材质、阴影和边缘效果。</div>
+            </div>
             <button type="button" onClick={onDownload} className="glass-action min-h-[36px] px-3 text-xs font-medium">下载</button>
           </div>
+        </section>
+
+        <section className="preview-panel-card" style={{ animationDelay: '45ms' }}>
+          <div className="mb-3 text-sm font-bold">材质</div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             {materials.map(item => (
               <button
@@ -1110,27 +1162,52 @@ function PreviewSidePanel({
           </div>
         </section>
 
-        <section className="preview-panel-card" style={{ animationDelay: '45ms' }}>
-          <div className="mb-3 text-sm font-bold">边缘与阴影</div>
+        <section className="preview-panel-card" style={{ animationDelay: '90ms' }}>
+          <div className="mb-3 text-sm font-bold">边缘效果</div>
           <div className="space-y-3">
-            <ToggleRow label="边缘效果" checked={settings.edgeEnabled} onChange={checked => setValue('edgeEnabled', checked)} />
+            <ToggleRow
+              label="弧形边缘"
+              helper="模拟热熔膨出后的圆润边缘，让像素块更像熨烫后的拼豆。"
+              checked={settings.edgeEnabled}
+              onChange={checked => setValue('edgeEnabled', checked)}
+            />
             <label className="grid gap-1 text-[11px] text-[var(--muted)]">
-              边缘强度 {settings.edgeIntensity}%
+              <span className="flex items-center justify-between">
+                <span>弧度</span>
+                <span className="tabular-nums">{settings.edgeIntensity}%</span>
+              </span>
               <input type="range" min="0" max="100" value={settings.edgeIntensity} onChange={event => setValue('edgeIntensity', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
             </label>
-            <ToggleRow label="阴影" checked={settings.shadowEnabled} onChange={checked => setValue('shadowEnabled', checked)} />
+          </div>
+        </section>
+
+        <section className="preview-panel-card" style={{ animationDelay: '135ms' }}>
+          <div className="mb-3 text-sm font-bold">阴影</div>
+          <div className="space-y-3">
+            <ToggleRow
+              label="显示投影"
+              helper="给整张图纸增加轻微落影，让背景层和图纸层分开。"
+              checked={settings.shadowEnabled}
+              onChange={checked => setValue('shadowEnabled', checked)}
+            />
             <label className="grid gap-1 text-[11px] text-[var(--muted)]">
-              阴影角度 {settings.shadowAngle}°
+              <span className="flex items-center justify-between">
+                <span>角度</span>
+                <span className="tabular-nums">{settings.shadowAngle}°</span>
+              </span>
               <input type="range" min="0" max="360" value={settings.shadowAngle} onChange={event => setValue('shadowAngle', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
             </label>
             <label className="grid gap-1 text-[11px] text-[var(--muted)]">
-              阴影距离 {settings.shadowDistance}px
+              <span className="flex items-center justify-between">
+                <span>距离</span>
+                <span className="tabular-nums">{settings.shadowDistance}px</span>
+              </span>
               <input type="range" min="0" max="28" value={settings.shadowDistance} onChange={event => setValue('shadowDistance', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
             </label>
           </div>
         </section>
 
-        <section className="preview-panel-card" style={{ animationDelay: '90ms' }}>
+        <section className="preview-panel-card" style={{ animationDelay: '180ms' }}>
           <div className="mb-3 text-sm font-bold">背景</div>
           <div className="grid grid-cols-3 gap-2">
             {backgrounds.map(item => (
@@ -1152,7 +1229,7 @@ function PreviewSidePanel({
           )}
         </section>
 
-        <section className="preview-panel-card" style={{ animationDelay: '135ms' }}>
+        <section className="preview-panel-card" style={{ animationDelay: '225ms' }}>
           <div className="mb-3 text-sm font-bold">品牌文字</div>
           <input
             value={settings.brandText}
@@ -1160,6 +1237,7 @@ function PreviewSidePanel({
             placeholder="留空则不显示"
             className="w-full rounded-lg border border-[rgba(var(--line-rgb),0.2)] bg-white/58 px-3 py-2 text-xs text-[var(--text)] outline-none focus:border-[rgba(var(--accent-rgb),0.55)]"
           />
+          <div className="mt-2 text-[11px] leading-4 text-[var(--muted)]">显示在图纸下方的背景留白区域。</div>
         </section>
       </div>
     </aside>
@@ -1303,6 +1381,7 @@ export default function Home() {
     customBackground: '#f4ead8',
     brandText: '',
   });
+  const [workspaceCanvasScale, setWorkspaceCanvasScale] = useState<number>(1);
   const [editorLayers, setEditorLayers] = useState<EditorLayer[]>([
     { id: 'base', name: '主体', type: 'base', visible: true, locked: true },
   ]);
@@ -4158,9 +4237,17 @@ export default function Home() {
       ? `${previewShadowX}px ${previewShadowY}px ${Math.max(18, previewSettings.shadowDistance * 3)}px rgba(0,0,0,0.22)`
       : undefined,
   };
+  const previewPaperStyle: React.CSSProperties = {
+    boxShadow: previewSettings.shadowEnabled
+      ? `${Math.round(previewShadowX * 0.45)}px ${Math.round(previewShadowY * 0.45)}px ${Math.max(12, previewSettings.shadowDistance * 1.7)}px rgba(0,0,0,0.18)`
+      : undefined,
+    borderRadius: previewSettings.edgeEnabled
+      ? `${Math.round(8 + previewSettings.edgeIntensity / 10)}px`
+      : '8px',
+  };
   const previewCanvasWrapStyle: React.CSSProperties = {
     filter: previewSettings.edgeEnabled
-      ? `contrast(${1 + previewSettings.edgeIntensity / 220}) saturate(${1 + previewSettings.edgeIntensity / 360})`
+      ? `contrast(${1 + previewSettings.edgeIntensity / 260}) saturate(${1 + previewSettings.edgeIntensity / 420})`
       : undefined,
   };
 
@@ -4409,52 +4496,67 @@ export default function Home() {
                           </div>
                         </div>
                       ) : (
-                        <div className={`relative flex min-h-0 flex-1 items-center justify-center overflow-auto p-3 sm:p-5 ${workspaceMode === 'preview' ? 'preview-stage' : 'editor-stage'}`}>
+                        <div className={`relative flex min-h-0 flex-1 items-start justify-start overflow-auto p-3 sm:p-5 ${workspaceMode === 'preview' ? 'preview-stage' : 'editor-stage'}`}>
                           <div
-                            className={`preview-board relative overflow-hidden rounded-xl border border-[rgba(var(--line-rgb),0.2)] p-2 shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)] ${workspaceMode === 'preview' ? `preview-material-${previewSettings.material}` : ''}`}
+                            className={`preview-board relative m-auto overflow-hidden border border-[rgba(var(--line-rgb),0.2)] shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)] ${
+                              workspaceMode === 'preview'
+                                ? `preview-material-${previewSettings.material} rounded-[22px] p-5 sm:p-7`
+                                : 'rounded-xl p-2'
+                            }`}
                             style={workspaceMode === 'preview' ? previewBoardStyle : { background: 'rgba(255,255,255,0.7)' }}
                           >
-                            <div className="preview-art-surface relative z-10" style={workspaceMode === 'preview' ? previewCanvasWrapStyle : undefined}>
-                              <PixelatedPreviewCanvas
-                                canvasRef={pixelatedCanvasRef}
-                                mappedPixelData={mappedPixelData}
-                                gridDimensions={gridDimensions}
-                                isManualColoringMode={isManualColoringMode}
-                                onInteraction={handleCanvasInteraction}
-                                highlightColorKey={highlightColorKey}
-                                panMode={isManualColoringMode && activeEditorTool === 'pan'}
-                                dragPaintMode={isManualColoringMode && (activeEditorTool === 'brush' || activeEditorTool === 'eraser')}
-                              />
-                            </div>
-                            {workspaceMode === 'preview' && previewSettings.brandText.trim() && (
-                              <div className="preview-brand-strip pointer-events-none relative z-10 mt-2 flex min-h-[44px] items-center justify-end px-3 py-2 text-xs font-semibold text-[var(--text)]">
-                                {previewSettings.brandText}
+                            <div className="relative z-10">
+                              <div
+                                className={`preview-art-surface relative z-10 overflow-hidden border border-[rgba(var(--line-rgb),0.22)] bg-white ${
+                                  workspaceMode === 'preview' ? 'p-0' : ''
+                                }`}
+                                style={workspaceMode === 'preview' ? { ...previewCanvasWrapStyle, ...previewPaperStyle } : undefined}
+                              >
+                                <PixelatedPreviewCanvas
+                                  canvasRef={pixelatedCanvasRef}
+                                  mappedPixelData={mappedPixelData}
+                                  gridDimensions={gridDimensions}
+                                  isManualColoringMode={isManualColoringMode}
+                                  onInteraction={handleCanvasInteraction}
+                                  highlightColorKey={highlightColorKey}
+                                  panMode={isManualColoringMode && activeEditorTool === 'pan'}
+                                  dragPaintMode={isManualColoringMode && (activeEditorTool === 'brush' || activeEditorTool === 'eraser')}
+                                  displayScale={workspaceMode === 'preview' || workspaceMode === 'optimize' ? workspaceCanvasScale : 1}
+                                />
+                                {stickers.map(sticker => {
+                                  const layer = editorLayers.find(item => item.id === sticker.layerId);
+                                  if (!layer?.visible) return null;
+                                  return (
+                                    <button
+                                      key={sticker.id}
+                                      type="button"
+                                      onPointerDown={event => handleStickerPointerDown(event, sticker.id)}
+                                      onPointerMove={event => handleStickerPointerMove(event, sticker.id)}
+                                      onPointerUp={handleStickerPointerEnd}
+                                      onPointerCancel={handleStickerPointerEnd}
+                                      className={`absolute z-20 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl border border-transparent p-1 transition ${
+                                        layer.id === activeLayerId
+                                          ? 'border-[rgba(var(--accent-rgb),0.5)] bg-white/28 shadow-[0_10px_24px_rgba(var(--shadow-rgb),0.14)]'
+                                          : 'hover:border-[rgba(var(--line-rgb),0.22)] hover:bg-white/22'
+                                      } ${layer.locked ? 'cursor-not-allowed opacity-80' : 'cursor-move'}`}
+                                      style={{ left: `${sticker.x}%`, top: `${sticker.y}%`, touchAction: 'none' }}
+                                      title={layer.locked ? '图层已锁定' : '拖动贴纸'}
+                                    >
+                                      <StickerMark sticker={sticker} viewScale={workspaceMode === 'preview' || workspaceMode === 'optimize' ? workspaceCanvasScale : 1} />
+                                    </button>
+                                  );
+                                })}
                               </div>
-                            )}
-                            {stickers.map(sticker => {
-                              const layer = editorLayers.find(item => item.id === sticker.layerId);
-                              if (!layer?.visible) return null;
-                              return (
-                                <button
-                                  key={sticker.id}
-                                  type="button"
-                                  onPointerDown={event => handleStickerPointerDown(event, sticker.id)}
-                                  onPointerMove={event => handleStickerPointerMove(event, sticker.id)}
-                                  onPointerUp={handleStickerPointerEnd}
-                                  onPointerCancel={handleStickerPointerEnd}
-                                  className={`absolute z-20 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl border border-transparent p-1 transition ${
-                                    layer.id === activeLayerId
-                                      ? 'border-[rgba(var(--accent-rgb),0.5)] bg-white/28 shadow-[0_10px_24px_rgba(var(--shadow-rgb),0.14)]'
-                                      : 'hover:border-[rgba(var(--line-rgb),0.22)] hover:bg-white/22'
-                                  } ${layer.locked ? 'cursor-not-allowed opacity-80' : 'cursor-move'}`}
-                                  style={{ left: `${sticker.x}%`, top: `${sticker.y}%`, touchAction: 'none' }}
-                                  title={layer.locked ? '图层已锁定' : '拖动贴纸'}
-                                >
-                                  <StickerMark sticker={sticker} />
-                                </button>
-                              );
-                            })}
+                              {workspaceMode === 'preview' && previewSettings.brandText.trim() && (
+                                <div className="preview-brand-strip pointer-events-none relative z-10 mt-4 flex min-h-[34px] items-center justify-center px-3 py-1.5 text-xs font-semibold italic tracking-[0.18em] text-[var(--text)]">
+                                  {previewSettings.brandText}
+                                </div>
+                              )}
+                            </div>
                           </div>
+                          {(workspaceMode === 'preview' || workspaceMode === 'optimize') && (
+                            <CanvasScaleControl scale={workspaceCanvasScale} onChange={setWorkspaceCanvasScale} />
+                          )}
                           {workspaceMode === 'edit' && showEditorMinimap && (
                             <EditorMinimap
                               mappedPixelData={mappedPixelData}

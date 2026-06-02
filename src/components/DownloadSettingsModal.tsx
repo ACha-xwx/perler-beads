@@ -30,7 +30,7 @@ const Toggle = ({
   <button
     type="button"
     onClick={() => onChange(!checked)}
-    className={`relative h-7 w-12 rounded-full border transition duration-200 ${
+    className={`relative h-7 w-12 rounded-full border transition duration-300 ${
       checked
         ? 'border-[rgba(var(--accent-rgb),0.58)] bg-[rgb(var(--accent-rgb))] shadow-[0_0_24px_rgba(var(--accent-rgb),0.24)]'
         : 'border-[rgba(var(--line-rgb),0.24)] bg-white/45'
@@ -38,7 +38,7 @@ const Toggle = ({
     aria-pressed={checked}
   >
     <span
-      className={`absolute top-1 h-5 w-5 rounded-full bg-[#f7f2e9] shadow transition-[left,box-shadow] duration-200 ${
+      className={`absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full bg-[#f7f2e9] shadow transition-[left,box-shadow] duration-300 ${
         checked ? 'left-[22px]' : 'left-[4px]'
       }`}
     />

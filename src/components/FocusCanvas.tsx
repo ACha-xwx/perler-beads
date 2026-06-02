@@ -296,7 +296,7 @@ const FocusCanvas: React.FC<FocusCanvasProps> = ({
           style={{
             transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px) scale(${canvasScale})`,
             transformOrigin: 'center center',
-            transition: isDragging ? 'none' : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)',
+            transition: isDragging ? 'none' : 'transform 360ms cubic-bezier(0.16, 1, 0.3, 1)',
           }}
         >
           <canvas
