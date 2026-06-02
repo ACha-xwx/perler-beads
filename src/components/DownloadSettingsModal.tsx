@@ -168,13 +168,13 @@ const DownloadSettingsModal: React.FC<DownloadSettingsModalProps> = ({
                 ['隐藏格内色号', 'showCellNumbers', '只导出纯像素色块', true],
                 ['包含色号统计', 'includeStats', '在图纸下方追加采购清单'],
                 ['水平镜像', 'horizontalMirror', '适合反面烫片或翻面制作'],
-                ['添加水印', 'addWatermark', '在图纸中写入工具名和署名'],
+                ['添加署名', 'addWatermark', '可选写入工具名和作者名，默认不添加'],
                 ['同时导出源数据', 'exportCsv', '导出 hex CSV，可重新导入'],
-              ].map(([label, key, helper, inverted]) => {
+              ].map(([label, key, helper, inverted], index) => {
                 const optionKey = key as keyof GridDownloadOptions;
                 const checked = Boolean(inverted ? !tempOptions[optionKey] : tempOptions[optionKey]);
                 return (
-                  <div key={String(key)} className="flex items-center justify-between gap-4 rounded-xl border border-[rgba(var(--line-rgb),0.14)] bg-white/50 px-3 py-3">
+                  <div key={String(key)} className="download-option-row flex items-center justify-between gap-4 rounded-xl border border-[rgba(var(--line-rgb),0.14)] bg-white/50 px-3 py-3" style={{ animationDelay: `${Math.min(index * 25, 140)}ms` }}>
                     <div>
                       <div className="text-sm font-medium">{label}</div>
                       <div className="mt-1 text-xs text-[var(--muted)]">{helper}</div>

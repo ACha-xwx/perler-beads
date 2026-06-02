@@ -23,7 +23,9 @@ interface EditorToolRailProps {
   selectedColor: SimpleColor | null;
   fallbackColor: SimpleColor | null;
   selectedColorSystem: ColorSystem;
+  showMinimap: boolean;
   onToolChange: (tool: EditorTool) => void;
+  onToggleMinimap: () => void;
 }
 
 interface EditorSidePanelProps {
@@ -214,7 +216,9 @@ export function EditorToolRail({
   selectedColor,
   fallbackColor,
   selectedColorSystem,
+  showMinimap,
   onToolChange,
+  onToggleMinimap,
 }: EditorToolRailProps) {
   const displayColor = selectedColor && selectedColor.key !== TRANSPARENT_KEY ? selectedColor : fallbackColor;
   const displayKey = displayColor ? getColorKeyByHex(displayColor.color, selectedColorSystem) : 'T01';
@@ -249,6 +253,27 @@ export function EditorToolRail({
           <span className="h-5 w-5">{item.icon}</span>
         </button>
       ))}
+
+      <div className="h-px w-7 flex-shrink-0 bg-[rgba(var(--line-rgb),0.24)]" />
+
+      <button
+        type="button"
+        onClick={onToggleMinimap}
+        className={`grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl transition-all duration-200 ${
+          showMinimap
+            ? 'scale-105 bg-[rgba(var(--accent-rgb),0.16)] text-[var(--text)] shadow-[0_0_22px_rgba(var(--accent-rgb),0.18)]'
+            : 'text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.1)] hover:text-[var(--text)] active:scale-95'
+        }`}
+        title={showMinimap ? '隐藏小地图' : '显示小地图'}
+        aria-label={showMinimap ? '隐藏小地图' : '显示小地图'}
+        aria-pressed={showMinimap}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+          <path d="M3 7l6-4 6 4 6-4v14l-6 4-6-4-6 4V7z" />
+          <path d="M9 3v14" />
+          <path d="M15 7v14" />
+        </svg>
+      </button>
     </div>
   );
 }
@@ -307,7 +332,7 @@ export function EditorSidePanel({
   }[activeTool];
 
   return (
-    <aside className="editor-side-panel absolute inset-y-0 right-0 z-30 flex w-full max-w-[340px] flex-col border-l border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.84)] text-[var(--text)] shadow-[-24px_0_60px_rgba(var(--shadow-rgb),0.14)] backdrop-blur-2xl lg:w-[320px]">
+    <aside className="editor-side-panel flex h-full w-full flex-col overflow-hidden rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.84)] text-[var(--text)] shadow-[-18px_0_48px_rgba(var(--shadow-rgb),0.12)] backdrop-blur-2xl">
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
         <PanelCard>
           <div className="mb-3 flex items-center justify-between">
@@ -441,7 +466,9 @@ export function EditorSidePanel({
           <div className="mb-3 flex items-center justify-between">
             <div className="text-sm font-bold">图层</div>
             <div className="flex items-center gap-1">
-              <button type="button" title="添加贴纸" className="grid h-7 w-7 place-items-center rounded-lg text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]">+</button>
+              <button type="button" title="添加贴纸" aria-label="添加贴纸" className="grid h-7 w-7 place-items-center rounded-lg text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]">
+                <span className="text-base leading-none">✦</span>
+              </button>
               <button type="button" title="添加空白图层" className="grid h-7 w-7 place-items-center rounded-lg text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.08)]">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                   <path d="M12 5v14M5 12h14" />

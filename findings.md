@@ -1,24 +1,10 @@
-# 发现记录
+﻿# Findings
 
 ## 2026-06-02
 
-- `origins/` 包含从旧站保存下来的 HTML 和 Next.js 静态 chunk：
-  - `七卡瓦拼豆底稿生成器 2.0 _ Perler Beads Generator.html`
-  - `七卡瓦拼豆底稿生成器 2.0 _ Perler Beads Generator_files/`
-- 用户明确指出旧站编辑页有左侧垂直工具栏，顺序是：色板、拖拽、画笔、橡皮、取色、填充、直线、矩形、选区。
-- 用户截图显示旧站右侧按工具切换面板，例如：
-  - 拖拽：提示“拖拽画布进行平移”
-  - 画笔：笔刷大小、横向/纵向镜像
-  - 橡皮：笔刷大小、区域擦除（同色连通）
-  - 取色：点击拾取颜色
-  - 填充：批量替换颜色
-  - 直线：笔刷大小、镜像
-  - 矩形：笔刷大小、镜像、实心填充
-  - 图层：主体图层、显示/锁定/复制等控制
-- 今日已修复首次导入卡住的根因：空状态没有预览 canvas，处理函数却要求 `pixelatedCanvasRef.current` 存在。当前代码已通过临时 canvas 解决。
-- 今日已修复导入后预览被压扁的根因：预览 canvas 首次挂载时宽高仍是浏览器默认 `300 x 150`。当前已在 `PixelatedPreviewCanvas` 中按网格比例设置真实尺寸。
-
-## 待确认
-
-- 需要从 origins chunk 中提取旧站真实组件结构和类名，确认是否能直接复用逻辑，还是只迁移交互形态。
-- 当前项目的编辑数据结构已经有手动上色、橡皮、颜色替换等部分能力，需要对齐旧站工具模式。
+- The saved original site under `origins/` confirms the main workbench structure: top mode tabs, left tool rail vertically centered, right 320px side panel, and a floating draggable/resizable minimap in edit mode.
+- Current source already had the restored conversion algorithm pieces: dominant/average color mapping, RGB Euclidean distance, BFS-like color merge, and border flood-fill background marking.
+- The current app had already removed visible community/share/gallery/open-source links from the header, but stale focus modal/page files remained. They were removed to avoid inconsistent pages.
+- The fixed old URL watermark is gone. Download signature remains available as an optional user-controlled export setting, default off.
+- In-app browser can open the site and visually confirmed the home workbench, app name, light theme, centered MARD/291 badge, and upload card. Its file chooser/localStorage write paths are restricted, so deeper import automation was not possible there.
+- Running `next build` while `next dev` was still active caused a transient `.next` cache conflict (`/_document` ENOENT). Stopping dev, clearing `.next`, and rerunning build resolved it.

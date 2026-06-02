@@ -1,20 +1,23 @@
-# 任务计划：按 origins 恢复拼豆生成器工作台
+﻿# Task Plan
 
-## 目标
-以 `origins/` 中保存的旧网页为真实参考源，把当前 Next.js 项目恢复成接近旧版的拼豆工作台：保留个人自用清理、主题/字体/缩放和动画改动，同时补回旧站的编辑工具栏、右侧工具设置面板、图层和色板等核心体验。
+## Goal
+Restore the saved original Perler Beads workbench behavior from `origins/` as the baseline, remove public/community pieces, and add polished light-theme design and motion without broadly changing the original workflow.
 
-## 阶段
+## Status
+- [x] Keep original four-mode workbench structure: optimize, edit, preview, focus.
+- [x] Remove public/community/share/open-source/gallery/support/privacy/message-board traces from current app surface.
+- [x] Keep all color systems: MARD, COCO, 漫漫, 盼盼, 咪小窝.
+- [x] Use English app name `BeadForge`; default theme is light black/white; default font is serif.
+- [x] Keep MARD 291 badge centered.
+- [x] Preserve original editor layout: left vertical tool rail centered, right 320px side panel outside canvas area.
+- [x] Restore original-like editor minimap: floating, draggable, resizable, with tool rail toggle.
+- [x] Restore layer controls distinction: sticker button uses a diamond/star symbol, layer button uses plus.
+- [x] Keep brush/eraser drag painting behavior and prevent duplicate touch-end paint.
+- [x] Remove fixed URL watermark behavior; download signature is optional and off by default.
+- [x] Make preview/focus modes live inside the same workbench style.
+- [x] Add motion and polished interaction styling across tabs, panels, palette, buttons, minimap, download options, and focus strips.
+- [x] Verify with TypeScript and production build.
 
-1. [in_progress] 梳理 `origins/` 页面结构、样式、脚本 chunk 和关键交互
-2. [pending] 对比当前 React 版缺失功能，形成迁移清单
-3. [pending] 迁移左侧垂直工具栏：色板、拖拽、画笔、橡皮、取色、填充、直线、矩形、选区
-4. [pending] 迁移右侧工具面板：按当前工具显示对应设置卡片
-5. [pending] 迁移/恢复图层面板、色板显示和基础编辑动作
-6. [pending] 验证导入、预览比例、构建、线上部署注意事项
-
-## 当前注意事项
-
-- 不做大幅 UI 重设计，以旧站工作台布局为主。
-- 删掉旧站右侧的留言板、素材隐私声明、社区与支持等公开站点内容。
-- 默认浅色，但可以保留主题切换；默认字体为 Serif。
-- 当前有本地未跟踪 `origins/`，这是用户提供的旧站源码，不应误删。
+## Remaining Notes
+- Browser file chooser cannot be automated directly in the in-app browser, so import UI was visually checked and build/type checks passed. The underlying import code path remains intact.
+- `origins/` is preserved untouched.

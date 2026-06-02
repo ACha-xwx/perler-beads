@@ -16,12 +16,6 @@ export interface RgbColor {
   b: number;
 }
 
-interface OklabColor {
-  l: number;
-  a: number;
-  b: number;
-}
-
 export interface PaletteColor {
   key: string;
   hex: string;
@@ -46,57 +40,13 @@ export function hexToRgb(hex: string): RgbColor | null {
   } : null;
 }
 
-function srgbChannelToLinear(channel: number): number {
-  const normalized = channel / 255;
-  return normalized <= 0.04045
-    ? normalized / 12.92
-    : Math.pow((normalized + 0.055) / 1.055, 2.4);
-}
-
-function rgbToOklab(rgb: RgbColor): OklabColor {
-  const r = srgbChannelToLinear(rgb.r);
-  const g = srgbChannelToLinear(rgb.g);
-  const b = srgbChannelToLinear(rgb.b);
-
-  const l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
-  const m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
-  const s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
-
-  const lRoot = Math.cbrt(l);
-  const mRoot = Math.cbrt(m);
-  const sRoot = Math.cbrt(s);
-
-  return {
-    l: 0.2104542553 * lRoot + 0.7936177850 * mRoot - 0.0040720468 * sRoot,
-    a: 1.9779984951 * lRoot - 2.4285922050 * mRoot + 0.4505937099 * sRoot,
-    b: 0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.8086757660 * sRoot,
-  };
-}
-
-const oklabCache = new Map<string, OklabColor>();
-
-function getOklabColor(rgb: RgbColor): OklabColor {
-  const cacheKey = `${rgb.r},${rgb.g},${rgb.b}`;
-  const cached = oklabCache.get(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  const oklab = rgbToOklab(rgb);
-  oklabCache.set(cacheKey, oklab);
-  return oklab;
-}
-
-// 使用 Oklab 空间计算颜色距离，并保持与现有 0-100 阈值输入兼容。
+// 原站算法使用 RGB 欧氏距离。阈值直接对应 RGB 空间的距离，避免同一图片在新旧站映射结果不一致。
 export function colorDistance(rgb1: RgbColor, rgb2: RgbColor): number {
-  const oklab1 = getOklabColor(rgb1);
-  const oklab2 = getOklabColor(rgb2);
+  const dr = rgb1.r - rgb2.r;
+  const dg = rgb1.g - rgb2.g;
+  const db = rgb1.b - rgb2.b;
 
-  const dl = oklab1.l - oklab2.l;
-  const da = oklab1.a - oklab2.a;
-  const db = oklab1.b - oklab2.b;
-
-  return Math.sqrt(dl * dl + da * da + db * db) * 100;
+  return Math.sqrt(dr * dr + dg * dg + db * db);
 }
 
 // 查找最接近的颜色

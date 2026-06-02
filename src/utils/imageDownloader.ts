@@ -247,7 +247,7 @@ export async function downloadImage({
       includeStats,
       showCellNumbers = true,
       horizontalMirror = false,
-      addWatermark = true,
+      addWatermark = false,
       authorName = '',
     } = options;
   

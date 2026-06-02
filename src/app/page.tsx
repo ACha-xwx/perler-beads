@@ -17,7 +17,6 @@ import {
 import {
   PixelationMode,
   calculatePixelGrid,
-  RgbColor,
   PaletteColor,
   MappedPixel,
   hexToRgb,
@@ -39,6 +38,7 @@ import {
   ColorSystem 
 } from '../utils/colorSystemUtils';
 import PixelatedPreviewCanvas from '../components/PixelatedPreviewCanvas';
+import EditorMinimap from '../components/EditorMinimap';
 import GridTooltip from '../components/GridTooltip';
 import CustomPaletteEditor from '../components/CustomPaletteEditor';
 import { EditorSidePanel, EditorTool, EditorToolRail } from '../components/EditorTools';
@@ -46,17 +46,75 @@ import MagnifierTool from '../components/MagnifierTool';
 import MagnifierSelectionOverlay from '../components/MagnifierSelectionOverlay';
 import { loadPaletteSelections, savePaletteSelections, presetToSelections, PaletteSelections } from '../utils/localStorageUtils';
 import { TRANSPARENT_KEY, transparentColorData } from '../utils/pixelEditingUtils';
-import FocusModePreDownloadModal from '../components/FocusModePreDownloadModal';
+import FocusCanvas from '../components/FocusCanvas';
+import ColorStatusBar from '../components/ColorStatusBar';
+import CelebrationAnimation from '../components/CelebrationAnimation';
+import CompletionCard from '../components/CompletionCard';
+import {
+  getAllConnectedRegions,
+  getConnectedRegion,
+  getRegionCenter,
+  isRegionCompleted,
+  sortRegionsByDistance,
+  sortRegionsBySize,
+} from '../utils/floodFillUtils';
 
 type WorkspaceMode = 'optimize' | 'edit' | 'preview' | 'focus';
 type GridPoint = { row: number; col: number };
 type SelectionArea = { startRow: number; startCol: number; endRow: number; endCol: number } | null;
+type GuidanceMode = 'nearest' | 'largest' | 'edge-first';
+type PreviewMaterial = 'matte' | 'glitter' | 'towel' | 'enamel';
+type PreviewBackground = 'white' | 'cream' | 'beige' | 'dark' | 'black' | 'wood' | 'custom';
+
+interface PreviewSettings {
+  material: PreviewMaterial;
+  edgeEnabled: boolean;
+  edgeIntensity: number;
+  shadowEnabled: boolean;
+  shadowAngle: number;
+  shadowDistance: number;
+  background: PreviewBackground;
+  customBackground: string;
+  brandText: string;
+  brandOpacity: number;
+}
+
+interface FocusWorkbenchState {
+  currentColor: string;
+  selectedCell: GridPoint | null;
+  canvasScale: number;
+  canvasOffset: { x: number; y: number };
+  completedCells: Set<string>;
+  colorProgress: Record<string, { completed: number; total: number }>;
+  recommendedRegion: GridPoint[] | null;
+  recommendedCell: GridPoint | null;
+  guidanceMode: GuidanceMode;
+  gridSectionInterval: number;
+  showSectionLines: boolean;
+  sectionLineColor: string;
+  enableCelebration: boolean;
+  showCelebration: boolean;
+  showCompletionCard: boolean;
+  showColorPanel: boolean;
+  showSettingsPanel: boolean;
+  isPaused: boolean;
+  totalElapsedTime: number;
+  lastResumeTime: number;
+}
+
+interface FocusColorInfo {
+  color: string;
+  name: string;
+  total: number;
+  completed: number;
+}
 
 const DEFAULT_GRANULARITY = 100;
 const DRAFT_STORAGE_KEY = 'beadforgeDraft';
 const APPEARANCE_STORAGE_KEY = 'beadforgeAppearance';
 const APPEARANCE_VERSION = 2;
 const IMPORT_FILE_ACCEPT = 'image/jpeg, image/png, image/gif, .csv, text/csv, application/csv, text/plain';
+const BACKGROUND_COLOR_KEYS = new Set(['T01', 'T1', 'H01', 'H1', 'H02', 'H2', 'P01', 'P1']);
 
 // 添加自定义动画样式
 const floatAnimation = `
@@ -141,6 +199,26 @@ const floatAnimation = `
   @keyframes cardLiftIn {
     from { opacity: 0; transform: translateY(14px) scale(0.985); }
     to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes previewBoardIn {
+    from { opacity: 0; transform: translateY(18px) scale(0.97); filter: blur(4px); }
+    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+
+  @keyframes beadShimmer {
+    from { background-position: -120% 0; }
+    to { background-position: 220% 0; }
+  }
+
+  @keyframes minimapIn {
+    from { opacity: 0; transform: translate(-8px, -8px) scale(0.94); }
+    to { opacity: 1; transform: translate(0, 0) scale(1); }
+  }
+
+  @keyframes optionRowIn {
+    from { opacity: 0; transform: translateX(14px) scale(0.985); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
   }
 
   .animate-float {
@@ -245,11 +323,35 @@ const floatAnimation = `
     scrollbar-color: rgba(var(--line-rgb),0.38) transparent;
   }
 
+  .editor-tool-rail button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .editor-tool-rail button::after {
+    content: "";
+    position: absolute;
+    inset: 20%;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(var(--accent-rgb),0.22), transparent 70%);
+    opacity: 0;
+    transform: scale(0.65);
+    transition: opacity 180ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+
+  .editor-tool-rail button:hover::after {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+
   .editor-side-panel {
     animation: panelSlideIn 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .editor-panel-card,
+  .preview-panel-card,
+  .focus-side-card,
   .download-panel-card,
   .settings-panel-card {
     position: relative;
@@ -266,6 +368,75 @@ const floatAnimation = `
     backdrop-filter: blur(16px) saturate(1.15);
     -webkit-backdrop-filter: blur(16px) saturate(1.15);
     animation: cardLiftIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .preview-stage,
+  .focus-stage,
+  .editor-stage {
+    background-color: var(--workspace-bg, rgba(var(--panel-rgb),0.52));
+    background-image: radial-gradient(rgba(var(--line-rgb),0.14) 1px, transparent 0);
+    background-size: 18px 18px;
+  }
+
+  .preview-board {
+    animation: previewBoardIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .preview-art {
+    image-rendering: pixelated;
+  }
+
+  .preview-material-glitter::after,
+  .preview-material-enamel::after,
+  .preview-material-towel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .preview-material-glitter::after {
+    background:
+      radial-gradient(circle at 18% 20%, rgba(255,255,255,0.55) 0 1px, transparent 2px),
+      radial-gradient(circle at 70% 62%, rgba(255,255,255,0.42) 0 1px, transparent 2px),
+      linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+    background-size: 18px 18px, 22px 22px, 180% 100%;
+    mix-blend-mode: screen;
+    animation: beadShimmer 2.8s ease-in-out infinite;
+  }
+
+  .preview-material-enamel::after {
+    background: linear-gradient(135deg, rgba(255,255,255,0.5), transparent 42%, rgba(0,0,0,0.08));
+  }
+
+  .preview-material-towel::after {
+    background:
+      repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0 1px, transparent 1px 4px),
+      repeating-linear-gradient(-45deg, rgba(255,255,255,0.15) 0 1px, transparent 1px 5px);
+    opacity: 0.62;
+  }
+
+  .floating-minimap {
+    animation: minimapIn 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    touch-action: none;
+  }
+
+  .floating-minimap canvas {
+    transition: filter 180ms ease, transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .floating-minimap canvas:hover {
+    filter: saturate(1.12) contrast(1.04);
+    transform: scale(1.01);
+  }
+
+  .download-option-row {
+    animation: optionRowIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .focus-bottom-palette {
+    animation: toolbar-slide-up 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .settings-panel-card {
@@ -616,9 +787,16 @@ const floatAnimation = `
     .editor-tool-rail,
     .editor-side-panel,
     .editor-panel-card,
+    .preview-panel-card,
+    .focus-side-card,
     .download-panel-card,
     .settings-panel-card,
-    .editor-color-swatch {
+    .editor-color-swatch,
+    .preview-board,
+    .preview-material-glitter::after,
+    .floating-minimap,
+    .download-option-row,
+    .focus-bottom-palette {
       animation: none;
     }
 
@@ -635,6 +813,8 @@ const floatAnimation = `
     .theme-toggle-knob,
     .editor-color-swatch,
     .editor-side-panel button,
+    .editor-tool-rail button::after,
+    .floating-minimap canvas,
     .download-panel-card button,
     .settings-panel-card button {
       transition: none;
@@ -696,10 +876,218 @@ function BeadLogo({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function ToggleRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className="flex w-full items-center justify-between rounded-xl border border-[rgba(var(--line-rgb),0.14)] bg-white/42 px-3 py-2.5 text-left transition hover:bg-white/66"
+      aria-pressed={checked}
+    >
+      <span className="text-xs font-semibold text-[var(--text)]">{label}</span>
+      <span className={`theme-toggle ${checked ? 'theme-toggle-on' : ''}`}>
+        <span className="theme-toggle-knob" />
+      </span>
+    </button>
+  );
+}
+
+function PreviewSidePanel({
+  settings,
+  onSettingsChange,
+  onDownload,
+}: {
+  settings: PreviewSettings;
+  onSettingsChange: (settings: PreviewSettings) => void;
+  onDownload: () => void;
+}) {
+  const setValue = <K extends keyof PreviewSettings>(key: K, value: PreviewSettings[K]) => {
+    onSettingsChange({ ...settings, [key]: value });
+  };
+
+  const materials: Array<{ key: PreviewMaterial; label: string }> = [
+    { key: 'matte', label: '磨砂' },
+    { key: 'glitter', label: '格力特' },
+    { key: 'towel', label: '毛巾' },
+    { key: 'enamel', label: '搪瓷巾' },
+  ];
+  const backgrounds: Array<{ key: PreviewBackground; label: string }> = [
+    { key: 'white', label: '白色' },
+    { key: 'cream', label: '奶白' },
+    { key: 'beige', label: '米色' },
+    { key: 'dark', label: '深色' },
+    { key: 'black', label: '黑色' },
+    { key: 'wood', label: '木纹' },
+    { key: 'custom', label: '自定义' },
+  ];
+
+  return (
+    <aside className="editor-side-panel flex h-full w-full flex-col overflow-hidden rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.84)] text-[var(--text)] shadow-[-18px_0_48px_rgba(var(--shadow-rgb),0.12)] backdrop-blur-2xl">
+      <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
+        <section className="preview-panel-card">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="text-sm font-bold">预览图</div>
+            <button type="button" onClick={onDownload} className="glass-action min-h-[36px] px-3 text-xs font-medium">下载</button>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            {materials.map(item => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setValue('material', item.key)}
+                className={`rounded-lg border px-2 py-2 transition ${settings.material === item.key ? 'border-[rgba(var(--accent-rgb),0.58)] bg-[rgba(var(--accent-rgb),0.14)] text-[var(--text)]' : 'border-[rgba(var(--line-rgb),0.15)] bg-white/48 text-[var(--muted)] hover:bg-white/68'}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="preview-panel-card" style={{ animationDelay: '45ms' }}>
+          <div className="mb-3 text-sm font-bold">边缘与阴影</div>
+          <div className="space-y-3">
+            <ToggleRow label="边缘效果" checked={settings.edgeEnabled} onChange={checked => setValue('edgeEnabled', checked)} />
+            <label className="grid gap-1 text-[11px] text-[var(--muted)]">
+              边缘强度 {settings.edgeIntensity}%
+              <input type="range" min="0" max="100" value={settings.edgeIntensity} onChange={event => setValue('edgeIntensity', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
+            </label>
+            <ToggleRow label="阴影" checked={settings.shadowEnabled} onChange={checked => setValue('shadowEnabled', checked)} />
+            <label className="grid gap-1 text-[11px] text-[var(--muted)]">
+              阴影角度 {settings.shadowAngle}°
+              <input type="range" min="0" max="360" value={settings.shadowAngle} onChange={event => setValue('shadowAngle', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
+            </label>
+            <label className="grid gap-1 text-[11px] text-[var(--muted)]">
+              阴影距离 {settings.shadowDistance}px
+              <input type="range" min="0" max="28" value={settings.shadowDistance} onChange={event => setValue('shadowDistance', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
+            </label>
+          </div>
+        </section>
+
+        <section className="preview-panel-card" style={{ animationDelay: '90ms' }}>
+          <div className="mb-3 text-sm font-bold">背景</div>
+          <div className="grid grid-cols-3 gap-2">
+            {backgrounds.map(item => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setValue('background', item.key)}
+                className={`rounded-lg border px-2 py-1.5 text-[11px] transition ${settings.background === item.key ? 'border-[rgba(var(--accent-rgb),0.58)] bg-[rgba(var(--accent-rgb),0.14)] text-[var(--text)]' : 'border-[rgba(var(--line-rgb),0.15)] bg-white/48 text-[var(--muted)] hover:bg-white/68'}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          {settings.background === 'custom' && (
+            <label className="mt-3 flex items-center justify-between gap-3 text-[11px] text-[var(--muted)]">
+              自定义颜色
+              <input type="color" value={settings.customBackground} onChange={event => setValue('customBackground', event.target.value)} className="h-8 w-12 rounded border border-[rgba(var(--line-rgb),0.18)] bg-transparent" />
+            </label>
+          )}
+        </section>
+
+        <section className="preview-panel-card" style={{ animationDelay: '135ms' }}>
+          <div className="mb-3 text-sm font-bold">品牌文字</div>
+          <input
+            value={settings.brandText}
+            onChange={event => setValue('brandText', event.target.value)}
+            placeholder="留空则不显示"
+            className="w-full rounded-lg border border-[rgba(var(--line-rgb),0.2)] bg-white/58 px-3 py-2 text-xs text-[var(--text)] outline-none focus:border-[rgba(var(--accent-rgb),0.55)]"
+          />
+          <label className="mt-3 grid gap-1 text-[11px] text-[var(--muted)]">
+            透明度 {settings.brandOpacity}%
+            <input type="range" min="0" max="100" value={settings.brandOpacity} onChange={event => setValue('brandOpacity', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
+          </label>
+        </section>
+      </div>
+    </aside>
+  );
+}
+
+function FocusSidePanel({
+  focusState,
+  onFocusStateChange,
+  onExportProgress,
+  onResetProgress,
+}: {
+  focusState: FocusWorkbenchState;
+  onFocusStateChange: React.Dispatch<React.SetStateAction<FocusWorkbenchState>>;
+  onExportProgress: () => void;
+  onResetProgress: () => void;
+}) {
+  const guidanceOptions: Array<{ key: GuidanceMode; label: string }> = [
+    { key: 'nearest', label: '最近优先' },
+    { key: 'largest', label: '大块优先' },
+    { key: 'edge-first', label: '边缘优先' },
+  ];
+  const sectionColors = ['#007acc', '#28a745', '#dc3545', '#6f42c1', '#fd7e14', '#6c757d'];
+
+  return (
+    <aside className="editor-side-panel flex h-full w-full flex-col overflow-hidden rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.84)] text-[var(--text)] shadow-[-18px_0_48px_rgba(var(--shadow-rgb),0.12)] backdrop-blur-2xl">
+      <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
+        <section className="focus-side-card">
+          <div className="mb-3 text-sm font-bold">引导策略</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {guidanceOptions.map(item => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => onFocusStateChange(prev => ({ ...prev, guidanceMode: item.key }))}
+                className={`rounded-lg border px-2 py-2 text-[11px] transition ${focusState.guidanceMode === item.key ? 'border-[rgba(var(--accent-rgb),0.58)] bg-[rgba(var(--accent-rgb),0.14)] text-[var(--text)]' : 'border-[rgba(var(--line-rgb),0.15)] bg-white/48 text-[var(--muted)] hover:bg-white/68'}`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="focus-side-card" style={{ animationDelay: '45ms' }}>
+          <div className="mb-3 text-sm font-bold">网格分割线</div>
+          <div className="space-y-3">
+            <ToggleRow label="显示分割线" checked={focusState.showSectionLines} onChange={checked => onFocusStateChange(prev => ({ ...prev, showSectionLines: checked }))} />
+            <label className="grid gap-1 text-[11px] text-[var(--muted)]">
+              分割间隔 {focusState.gridSectionInterval} 格
+              <input type="range" min="5" max="20" value={focusState.gridSectionInterval} onChange={event => onFocusStateChange(prev => ({ ...prev, gridSectionInterval: Number(event.target.value) }))} className="accent-[rgb(var(--accent-rgb))]" />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {sectionColors.map(color => (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => onFocusStateChange(prev => ({ ...prev, sectionLineColor: color }))}
+                  className={`h-7 w-7 rounded-lg border-2 transition ${focusState.sectionLineColor === color ? 'scale-110 border-[rgb(var(--accent-rgb))]' : 'border-black/15 hover:border-black/40'}`}
+                  style={{ backgroundColor: color }}
+                  aria-label={`分割线颜色 ${color}`}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="focus-side-card" style={{ animationDelay: '90ms' }}>
+          <div className="mb-3 text-sm font-bold">进度</div>
+          <div className="space-y-3">
+            <ToggleRow label="完成撒花" checked={focusState.enableCelebration} onChange={checked => onFocusStateChange(prev => ({ ...prev, enableCelebration: checked }))} />
+            <button type="button" onClick={onExportProgress} className="glass-action min-h-[40px] w-full px-3 text-xs font-medium">导出进度数据</button>
+            <button type="button" onClick={onResetProgress} className="glass-action min-h-[40px] w-full px-3 text-xs font-medium text-red-700">重置所有进度</button>
+          </div>
+        </section>
+      </div>
+    </aside>
+  );
+}
+
 export default function Home() {
   const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null);
-  const [granularity, setGranularity] = useState<number>(50);
-  const [granularityInput, setGranularityInput] = useState<string>("50");
+  const [granularity, setGranularity] = useState<number>(DEFAULT_GRANULARITY);
+  const [granularityInput, setGranularityInput] = useState<string>(DEFAULT_GRANULARITY.toString());
   const [similarityThreshold, setSimilarityThreshold] = useState<number>(30);
   const [similarityThresholdInput, setSimilarityThresholdInput] = useState<string>("30");
   // 添加像素化模式状态
@@ -734,6 +1122,7 @@ export default function Home() {
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('optimize');
   const intendedWorkspaceModeRef = useRef<WorkspaceMode>('optimize');
   const [activeEditorTool, setActiveEditorTool] = useState<EditorTool>('brush');
+  const [showEditorMinimap, setShowEditorMinimap] = useState<boolean>(true);
   const [brushSize, setBrushSize] = useState<number>(1);
   const [brushMirrorX, setBrushMirrorX] = useState<boolean>(false);
   const [brushMirrorY, setBrushMirrorY] = useState<boolean>(false);
@@ -748,6 +1137,40 @@ export default function Home() {
   const [pendingLineStart, setPendingLineStart] = useState<GridPoint | null>(null);
   const [pendingRectangleStart, setPendingRectangleStart] = useState<GridPoint | null>(null);
   const [selectionArea, setSelectionArea] = useState<SelectionArea>(null);
+  const [previewSettings, setPreviewSettings] = useState<PreviewSettings>({
+    material: 'matte',
+    edgeEnabled: true,
+    edgeIntensity: 30,
+    shadowEnabled: true,
+    shadowAngle: 135,
+    shadowDistance: 8,
+    background: 'cream',
+    customBackground: '#f4ead8',
+    brandText: '',
+    brandOpacity: 0,
+  });
+  const [focusState, setFocusState] = useState<FocusWorkbenchState>({
+    currentColor: '',
+    selectedCell: null,
+    canvasScale: 1,
+    canvasOffset: { x: 0, y: 0 },
+    completedCells: new Set<string>(),
+    colorProgress: {},
+    recommendedRegion: null,
+    recommendedCell: null,
+    guidanceMode: 'nearest',
+    gridSectionInterval: 10,
+    showSectionLines: true,
+    sectionLineColor: '#007acc',
+    enableCelebration: true,
+    showCelebration: false,
+    showCompletionCard: false,
+    showColorPanel: false,
+    showSettingsPanel: false,
+    isPaused: false,
+    totalElapsedTime: 0,
+    lastResumeTime: Date.now(),
+  });
   
   // ++ 新增：下载设置相关状态 ++
   const [isDownloadSettingsOpen, setIsDownloadSettingsOpen] = useState<boolean>(false);
@@ -761,7 +1184,7 @@ export default function Home() {
     exportCsv: false, // 默认不导出CSV
     authorName: '',
     horizontalMirror: false,
-    addWatermark: true,
+    addWatermark: false,
   });
 
   // 新增：高亮相关状态
@@ -788,9 +1211,6 @@ export default function Home() {
     endRow: number;
     endCol: number;
   } | null>(null);
-
-  // 新增：专心拼豆模式进入前下载提醒弹窗
-  const [isFocusModePreDownloadModalOpen, setIsFocusModePreDownloadModalOpen] = useState<boolean>(false);
 
   // 新增：编辑撤回历史栈（多步）
   interface EditSnapshot {
@@ -861,9 +1281,9 @@ export default function Home() {
     }
 
     if (mode === 'focus') {
-      if (!mappedPixelData || !gridDimensions) return;
+      if (!mappedPixelData || !gridDimensions || !colorCounts) return;
       intendedWorkspaceModeRef.current = mode;
-      handleEnterFocusMode();
+      enterFocusWorkbench();
       return;
     }
 
@@ -1129,20 +1549,33 @@ export default function Home() {
 
   // --- Event Handlers ---
 
-  // 专心拼豆模式相关处理函数
-  const handleEnterFocusMode = () => {
-    setIsFocusModePreDownloadModalOpen(true);
-  };
+  // 专心拼豆模式在同一工作台内运行，保留预览/编辑上下文。
+  const enterFocusWorkbench = () => {
+    if (!mappedPixelData || !gridDimensions || !colorCounts) return;
 
-  const handleProceedToFocusMode = () => {
-    // 保存数据到localStorage供专心拼豆模式使用
-    localStorage.setItem('focusMode_pixelData', JSON.stringify(mappedPixelData));
-    localStorage.setItem('focusMode_gridDimensions', JSON.stringify(gridDimensions));
-    localStorage.setItem('focusMode_colorCounts', JSON.stringify(colorCounts));
-    localStorage.setItem('focusMode_selectedColorSystem', selectedColorSystem);
-    
-    // 跳转到专心拼豆页面
-    window.location.href = '/focus';
+    const progress = Object.entries(colorCounts).reduce<Record<string, { completed: number; total: number }>>((acc, [hex, data]) => {
+      acc[hex] = focusState.colorProgress[hex] || { completed: 0, total: data.count };
+      return acc;
+    }, {});
+    const firstColor = Object.keys(progress)[0] || '';
+
+    setFocusState(prev => ({
+      ...prev,
+      currentColor: prev.currentColor && progress[prev.currentColor] ? prev.currentColor : firstColor,
+      colorProgress: progress,
+      canvasScale: prev.canvasScale || 1,
+      canvasOffset: prev.canvasOffset || { x: 0, y: 0 },
+      lastResumeTime: Date.now(),
+      isPaused: false,
+      showColorPanel: false,
+      showSettingsPanel: false,
+    }));
+    setIsManualColoringMode(false);
+    setSelectedColor(null);
+    setWorkspaceMode('focus');
+    setTooltipData(null);
+    setIsEraseMode(false);
+    resetPendingEditorGestures();
   };
 
   const hasWorkInProgress = Boolean(mappedPixelData && gridDimensions && colorCounts);
@@ -1664,108 +2097,112 @@ export default function Home() {
             mode,
             t1FallbackColor
         );
-        console.log(`Initial data mapping complete using mode ${mode}. Starting global color merging...`);
+        console.log(`Initial data mapping complete using mode ${mode}. Starting connected-region color merging...`);
 
-        // --- 新的全局颜色合并逻辑 ---
-        const keyToRgbMap = new Map<string, RgbColor>();
         const keyToColorDataMap = new Map<string, PaletteColor>();
-        currentPalette.forEach(p => {
-          keyToRgbMap.set(p.key, p.rgb);
-          keyToColorDataMap.set(p.key, p);
-        });
+        currentPalette.forEach(p => keyToColorDataMap.set(p.key, p));
 
-        // 2. 统计初始颜色数量
-        const initialColorCounts: { [key: string]: number } = {};
-        initialMappedData.flat().forEach(cell => {
-            if (cell && cell.key && !cell.isExternal && cell.key !== TRANSPARENT_KEY) {
-                initialColorCounts[cell.key] = (initialColorCounts[cell.key] || 0) + 1;
-            }
-        });
-        console.log("Initial color counts:", initialColorCounts);
-
-        // 3. 创建一个颜色排序列表，按出现频率从高到低排序
-        const colorsByFrequency = Object.entries(initialColorCounts)
-            .sort((a, b) => b[1] - a[1])  // 按频率降序排序
-            .map(entry => entry[0]);      // 只保留颜色键
-        
-        if (colorsByFrequency.length === 0) {
-            console.log("No non-background colors found! Skipping merging.");
-        }
-
-        console.log("Colors sorted by frequency:", colorsByFrequency);
-        
-        // 4. 复制初始数据，准备合并
-        const mergedData: MappedPixel[][] = initialMappedData.map(row => 
-            row.map(cell => ({ ...cell, isExternal: cell.isExternal ?? false }))
+        const mergedData: MappedPixel[][] = initialMappedData.map(row =>
+          row.map(cell => ({ ...cell, isExternal: false }))
         );
-        
-        // 5. 处理相似颜色合并
+        const visitedForMerge = Array(M).fill(null).map(() => Array(N).fill(false));
         const similarityThresholdValue = threshold;
-        
-        // 已被合并（替换）的颜色集合
-        const replacedColors = new Set<string>();
-        
-        // 对每个颜色按频率从高到低处理
-        for (let i = 0; i < colorsByFrequency.length; i++) {
-            const currentKey = colorsByFrequency[i];
-            
-            // 如果当前颜色已经被合并到更频繁的颜色中，跳过
-            if (replacedColors.has(currentKey)) continue;
-            
-            const currentRgb = keyToRgbMap.get(currentKey);
-            if (!currentRgb) {
-                console.warn(`RGB not found for key ${currentKey}. Skipping.`);
-                continue;
+        const directions: GridPoint[] = [
+          { row: -1, col: 0 },
+          { row: 1, col: 0 },
+          { row: 0, col: -1 },
+          { row: 0, col: 1 },
+        ];
+
+        for (let row = 0; row < M; row++) {
+          for (let col = 0; col < N; col++) {
+            if (visitedForMerge[row][col]) continue;
+            const seedCell = mergedData[row][col];
+            const seedRgb = hexToRgb(seedCell.color);
+            if (!seedCell || !seedRgb) {
+              visitedForMerge[row][col] = true;
+              continue;
             }
-            
-            // 检查剩余的低频颜色
-            for (let j = i + 1; j < colorsByFrequency.length; j++) {
-                const lowerFreqKey = colorsByFrequency[j];
-                
-                // 如果低频颜色已被替换，跳过
-                if (replacedColors.has(lowerFreqKey)) continue;
-                
-                const lowerFreqRgb = keyToRgbMap.get(lowerFreqKey);
-                if (!lowerFreqRgb) {
-                    console.warn(`RGB not found for key ${lowerFreqKey}. Skipping.`);
-                    continue;
+
+            const region: GridPoint[] = [];
+            const regionColorCounts = new Map<string, number>();
+            const stack: GridPoint[] = [{ row, col }];
+            visitedForMerge[row][col] = true;
+
+            while (stack.length > 0) {
+              const point = stack.pop()!;
+              const currentCell = mergedData[point.row][point.col];
+              region.push(point);
+              regionColorCounts.set(currentCell.key, (regionColorCounts.get(currentCell.key) || 0) + 1);
+
+              directions.forEach(direction => {
+                const nextRow = point.row + direction.row;
+                const nextCol = point.col + direction.col;
+                if (nextRow < 0 || nextRow >= M || nextCol < 0 || nextCol >= N || visitedForMerge[nextRow][nextCol]) return;
+                const nextCell = mergedData[nextRow][nextCol];
+                const nextRgb = hexToRgb(nextCell.color);
+                if (!nextRgb) return;
+                if (colorDistance(seedRgb, nextRgb) <= similarityThresholdValue) {
+                  visitedForMerge[nextRow][nextCol] = true;
+                  stack.push({ row: nextRow, col: nextCol });
                 }
-                
-                // 计算颜色距离
-                const dist = colorDistance(currentRgb, lowerFreqRgb);
-                
-                // 如果距离小于阈值，将低频颜色替换为高频颜色
-                if (dist < similarityThresholdValue) {
-                    console.log(`Merging color ${lowerFreqKey} into ${currentKey} (Distance: ${dist.toFixed(2)})`);
-                    
-                    // 标记这个颜色已被替换
-                    replacedColors.add(lowerFreqKey);
-                    
-                    // 替换所有使用这个低频颜色的单元格
-                    for (let r = 0; r < M; r++) {
-                        for (let c = 0; c < N; c++) {
-                            if (mergedData[r][c].key === lowerFreqKey) {
-                                const colorData = keyToColorDataMap.get(currentKey);
-                                if (colorData) {
-                                    mergedData[r][c] = {
-                                        key: currentKey,
-                                        color: colorData.hex,
-                                        isExternal: false
-                                    };
-                                }
-                            }
-                        }
-                    }
-                }
+              });
             }
+
+            let dominantKey = seedCell.key;
+            let dominantCount = -1;
+            regionColorCounts.forEach((count, key) => {
+              if (count > dominantCount) {
+                dominantKey = key;
+                dominantCount = count;
+              }
+            });
+
+            const dominantColor = keyToColorDataMap.get(dominantKey);
+            if (dominantColor) {
+              region.forEach(point => {
+                mergedData[point.row][point.col] = {
+                  key: dominantColor.key,
+                  color: dominantColor.hex,
+                  isExternal: false,
+                };
+              });
+            }
+          }
         }
-        
-        if (replacedColors.size > 0) {
-            console.log(`Merged ${replacedColors.size} less frequent similar colors into more frequent ones.`);
-        } else {
-            console.log("No colors were similar enough to merge.");
+
+        const isBackgroundCell = (cell: MappedPixel) => {
+          const displayKey = (cell.key || '').toUpperCase();
+          const mardKey = getColorKeyByHex(cell.color, 'MARD').toUpperCase();
+          return BACKGROUND_COLOR_KEYS.has(displayKey) || BACKGROUND_COLOR_KEYS.has(mardKey);
+        };
+        const visitedForBackground = Array(M).fill(null).map(() => Array(N).fill(false));
+        const backgroundStack: GridPoint[] = [];
+        const pushBackground = (row: number, col: number) => {
+          if (row < 0 || row >= M || col < 0 || col >= N || visitedForBackground[row][col]) return;
+          const cell = mergedData[row][col];
+          if (!cell || !isBackgroundCell(cell)) return;
+          visitedForBackground[row][col] = true;
+          backgroundStack.push({ row, col });
+        };
+
+        for (let col = 0; col < N; col++) {
+          pushBackground(0, col);
+          if (M > 1) pushBackground(M - 1, col);
         }
-        // --- 结束新的全局颜色合并逻辑 ---
+        for (let row = 1; row < M - 1; row++) {
+          pushBackground(row, 0);
+          if (N > 1) pushBackground(row, N - 1);
+        }
+
+        while (backgroundStack.length > 0) {
+          const point = backgroundStack.pop()!;
+          mergedData[point.row][point.col] = {
+            ...mergedData[point.row][point.col],
+            isExternal: true,
+          };
+          directions.forEach(direction => pushBackground(point.row + direction.row, point.col + direction.col));
+        }
 
         setMappedPixelData(mergedData);
         setGridDimensions({ N, M });
@@ -3008,6 +3445,296 @@ export default function Home() {
         }))
     : [];
 
+  const availableFocusColors = useMemo<FocusColorInfo[]>(() => {
+    if (!colorCounts) return [];
+
+    return Object.keys(colorCounts)
+      .sort(sortColorKeys)
+      .map(hexKey => {
+        const progress = focusState.colorProgress[hexKey] || { completed: 0, total: colorCounts[hexKey].count };
+        return {
+          color: hexKey,
+          name: getColorKeyByHex(hexKey, selectedColorSystem),
+          total: colorCounts[hexKey].count,
+          completed: Math.min(progress.completed, colorCounts[hexKey].count),
+        };
+      });
+  }, [colorCounts, focusState.colorProgress, selectedColorSystem]);
+
+  const currentFocusColorInfo = availableFocusColors.find(color => color.color === focusState.currentColor);
+  const focusProgressPercentage = currentFocusColorInfo && currentFocusColorInfo.total > 0
+    ? Math.round((currentFocusColorInfo.completed / currentFocusColorInfo.total) * 100)
+    : 0;
+
+  useEffect(() => {
+    if (!colorCounts || workspaceMode !== 'focus') return;
+
+    setFocusState(prev => {
+      const nextProgress = Object.entries(colorCounts).reduce<Record<string, { completed: number; total: number }>>((acc, [hex, data]) => {
+        acc[hex] = prev.colorProgress[hex] || { completed: 0, total: data.count };
+        acc[hex].total = data.count;
+        acc[hex].completed = Math.min(acc[hex].completed, data.count);
+        return acc;
+      }, {});
+      const nextColor = prev.currentColor && nextProgress[prev.currentColor] ? prev.currentColor : Object.keys(nextProgress)[0] || '';
+
+      return {
+        ...prev,
+        currentColor: nextColor,
+        colorProgress: nextProgress,
+      };
+    });
+  }, [colorCounts, workspaceMode]);
+
+  useEffect(() => {
+    if (workspaceMode !== 'focus' || focusState.isPaused) return;
+
+    const interval = window.setInterval(() => {
+      setFocusState(prev => {
+        if (prev.isPaused) return prev;
+        const now = Date.now();
+        const elapsed = Math.floor((now - prev.lastResumeTime) / 1000);
+        if (elapsed <= 0) return prev;
+        return {
+          ...prev,
+          totalElapsedTime: prev.totalElapsedTime + elapsed,
+          lastResumeTime: now,
+        };
+      });
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [workspaceMode, focusState.isPaused]);
+
+  const calculateFocusRecommendation = useCallback(() => {
+    if (!mappedPixelData || !focusState.currentColor) return { region: null, cell: null };
+
+    const allRegions = getAllConnectedRegions(mappedPixelData, focusState.currentColor);
+    const incompleteRegions = allRegions.filter(region => !isRegionCompleted(region, focusState.completedCells));
+    if (incompleteRegions.length === 0) return { region: null, cell: null };
+
+    let selectedRegion: GridPoint[];
+    if (focusState.guidanceMode === 'largest') {
+      selectedRegion = sortRegionsBySize([...incompleteRegions])[0] as GridPoint[];
+    } else if (focusState.guidanceMode === 'edge-first') {
+      const M = mappedPixelData.length;
+      const N = mappedPixelData[0]?.length || 0;
+      selectedRegion = (incompleteRegions.find(region =>
+        region.some(cell => cell.row === 0 || cell.row === M - 1 || cell.col === 0 || cell.col === N - 1)
+      ) || incompleteRegions[0]) as GridPoint[];
+    } else {
+      const referencePoint = focusState.selectedCell ?? {
+        row: Math.floor(mappedPixelData.length / 2),
+        col: Math.floor((mappedPixelData[0]?.length || 1) / 2),
+      };
+      selectedRegion = sortRegionsByDistance([...incompleteRegions], referencePoint)[0] as GridPoint[];
+    }
+
+    return {
+      region: selectedRegion,
+      cell: getRegionCenter(selectedRegion),
+    };
+  }, [mappedPixelData, focusState.currentColor, focusState.completedCells, focusState.guidanceMode, focusState.selectedCell]);
+
+  useEffect(() => {
+    if (workspaceMode !== 'focus') return;
+    const { region, cell } = calculateFocusRecommendation();
+    setFocusState(prev => ({
+      ...prev,
+      recommendedRegion: region,
+      recommendedCell: cell,
+    }));
+  }, [workspaceMode, calculateFocusRecommendation]);
+
+  const formatFocusTime = useCallback((seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return hours > 0
+      ? `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+      : `${minutes}:${secs.toString().padStart(2, '0')}`;
+  }, []);
+
+  const handleFocusCellClick = useCallback((row: number, col: number) => {
+    if (!mappedPixelData || !focusState.currentColor) return;
+    const cell = mappedPixelData[row]?.[col];
+    if (!cell || cell.isExternal || cell.color !== focusState.currentColor) return;
+
+    const region = getConnectedRegion(mappedPixelData, row, col, focusState.currentColor);
+    if (region.length === 0) return;
+
+    const newCompletedCells = new Set(focusState.completedCells);
+    const alreadyCompleted = isRegionCompleted(region, focusState.completedCells);
+    region.forEach(point => {
+      const key = `${point.row},${point.col}`;
+      if (alreadyCompleted) {
+        newCompletedCells.delete(key);
+      } else {
+        newCompletedCells.add(key);
+      }
+    });
+
+    const newColorProgress = { ...focusState.colorProgress };
+    const currentProgress = newColorProgress[focusState.currentColor] || {
+      completed: 0,
+      total: colorCounts?.[focusState.currentColor]?.count || region.length,
+    };
+    const oldCompleted = currentProgress.completed;
+    const newCompleted = Array.from(newCompletedCells).filter(key => {
+      const [r, c] = key.split(',').map(Number);
+      return mappedPixelData[r]?.[c]?.color === focusState.currentColor;
+    }).length;
+    newColorProgress[focusState.currentColor] = {
+      ...currentProgress,
+      completed: newCompleted,
+    };
+
+    const colorJustCompleted = oldCompleted < currentProgress.total && newCompleted >= currentProgress.total;
+    const allCompleted = Object.values(newColorProgress).every(progress => progress.completed >= progress.total);
+
+    setFocusState(prev => {
+      const now = Date.now();
+      const elapsed = prev.isPaused ? 0 : Math.floor((now - prev.lastResumeTime) / 1000);
+      return {
+        ...prev,
+        completedCells: newCompletedCells,
+        selectedCell: { row, col },
+        colorProgress: newColorProgress,
+        showCelebration: colorJustCompleted && prev.enableCelebration,
+        showCompletionCard: allCompleted,
+        isPaused: allCompleted ? true : prev.isPaused,
+        totalElapsedTime: prev.totalElapsedTime + elapsed,
+        lastResumeTime: now,
+      };
+    });
+  }, [mappedPixelData, focusState.currentColor, focusState.completedCells, focusState.colorProgress, colorCounts]);
+
+  const handleFocusColorChange = useCallback((color: string) => {
+    setFocusState(prev => ({ ...prev, currentColor: color, showColorPanel: false }));
+  }, []);
+
+  const handleFocusLocateRecommended = useCallback(() => {
+    if (!focusState.recommendedCell || !gridDimensions) return;
+    const cellSize = Math.max(15, Math.min(40, 300 / Math.max(gridDimensions.N, gridDimensions.M)));
+    const targetX = (focusState.recommendedCell.col + 0.5) * cellSize;
+    const targetY = (focusState.recommendedCell.row + 0.5) * cellSize;
+    const canvasWidth = gridDimensions.N * cellSize;
+    const canvasHeight = gridDimensions.M * cellSize;
+
+    setFocusState(prev => ({
+      ...prev,
+      canvasOffset: {
+        x: canvasWidth / 2 - targetX,
+        y: canvasHeight / 2 - targetY,
+      },
+    }));
+  }, [focusState.recommendedCell, gridDimensions]);
+
+  const handleFocusPauseToggle = useCallback(() => {
+    setFocusState(prev => {
+      const now = Date.now();
+      if (prev.isPaused) {
+        return { ...prev, isPaused: false, lastResumeTime: now };
+      }
+
+      return {
+        ...prev,
+        isPaused: true,
+        totalElapsedTime: prev.totalElapsedTime + Math.floor((now - prev.lastResumeTime) / 1000),
+      };
+    });
+  }, []);
+
+  const handleFocusCelebrationComplete = useCallback(() => {
+    setFocusState(prev => {
+      const allCompleted = Object.values(prev.colorProgress).every(progress => progress.completed >= progress.total);
+      if (allCompleted) {
+        return { ...prev, showCelebration: false, showCompletionCard: true };
+      }
+
+      const nextColor = availableFocusColors.find(color => color.completed < color.total && color.color !== prev.currentColor);
+      return {
+        ...prev,
+        showCelebration: false,
+        currentColor: nextColor?.color || prev.currentColor,
+      };
+    });
+  }, [availableFocusColors]);
+
+  const handleFocusExportProgress = useCallback(() => {
+    if (!mappedPixelData || !gridDimensions) return;
+
+    const payload = {
+      app: APP_NAME,
+      exportedAt: new Date().toISOString(),
+      gridDimensions,
+      completedCells: Array.from(focusState.completedCells),
+      colorProgress: focusState.colorProgress,
+      totalElapsedTime: focusState.totalElapsedTime,
+      guidanceMode: focusState.guidanceMode,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `beadforge-focus-progress-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [focusState.completedCells, focusState.colorProgress, focusState.guidanceMode, focusState.totalElapsedTime, gridDimensions, mappedPixelData]);
+
+  const handleFocusResetProgress = useCallback(() => {
+    const resetProgress = availableFocusColors.reduce<Record<string, { completed: number; total: number }>>((acc, color) => {
+      acc[color.color] = { completed: 0, total: color.total };
+      return acc;
+    }, {});
+    setFocusState(prev => ({
+      ...prev,
+      completedCells: new Set<string>(),
+      colorProgress: resetProgress,
+      selectedCell: null,
+      showCelebration: false,
+      showCompletionCard: false,
+      totalElapsedTime: 0,
+      lastResumeTime: Date.now(),
+      isPaused: false,
+    }));
+  }, [availableFocusColors]);
+
+  const previewBackground = (() => {
+    switch (previewSettings.background) {
+      case 'white':
+        return 'oklch(0.99 0.004 105)';
+      case 'cream':
+        return 'oklch(0.96 0.022 88)';
+      case 'beige':
+        return 'oklch(0.9 0.034 74)';
+      case 'dark':
+        return 'oklch(0.24 0.012 110)';
+      case 'black':
+        return 'oklch(0.14 0.006 110)';
+      case 'wood':
+        return 'linear-gradient(135deg, oklch(0.76 0.06 68), oklch(0.58 0.075 54))';
+      case 'custom':
+        return previewSettings.customBackground;
+      default:
+        return 'oklch(0.96 0.022 88)';
+    }
+  })();
+  const shadowRadians = (previewSettings.shadowAngle * Math.PI) / 180;
+  const previewShadowX = Math.round(Math.cos(shadowRadians) * previewSettings.shadowDistance);
+  const previewShadowY = Math.round(Math.sin(shadowRadians) * previewSettings.shadowDistance);
+  const previewBoardStyle: React.CSSProperties = {
+    background: previewBackground,
+    boxShadow: previewSettings.shadowEnabled
+      ? `${previewShadowX}px ${previewShadowY}px ${Math.max(18, previewSettings.shadowDistance * 3)}px rgba(0,0,0,0.22)`
+      : undefined,
+  };
+  const previewCanvasWrapStyle: React.CSSProperties = {
+    filter: previewSettings.edgeEnabled
+      ? `contrast(${1 + previewSettings.edgeIntensity / 220}) saturate(${1 + previewSettings.edgeIntensity / 360})`
+      : undefined,
+  };
+
 
   return (
     <>
@@ -3149,8 +3876,8 @@ export default function Home() {
         </header>
 
         <div className="relative flex min-h-0 flex-1">
-          <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1">
-            <div className={`flex min-h-0 min-w-0 flex-1 px-2 py-3 transition-[padding] duration-200 ease-out sm:px-4 ${isManualColoringMode ? 'lg:pr-[320px]' : ''}`}>
+          <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1 gap-3 px-2 py-3 sm:px-4">
+            <div className="flex min-h-0 min-w-0 flex-1">
               <main ref={mainRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
                 <input
                   type="file"
@@ -3167,11 +3894,6 @@ export default function Home() {
                   onDragEnter={handleDragOver}
                   className="workspace-enter glass-panel relative flex min-h-0 flex-1 overflow-hidden rounded-2xl"
                 >
-                  <div className="pointer-events-none absolute inset-0 opacity-70">
-                    <div className="absolute left-8 top-8 h-24 w-24 rounded-full border border-[rgba(var(--accent-rgb),0.18)]" />
-                    <div className="absolute bottom-8 right-12 h-32 w-32 rounded-full border border-[rgba(var(--accent-2-rgb),0.18)]" />
-                  </div>
-
                   {mappedPixelData && gridDimensions ? (
                     <div className="relative z-10 flex h-full w-full flex-col">
                       <div className="flex items-center justify-between gap-3 border-b border-[rgba(var(--line-rgb),0.16)] bg-white/32 px-3 py-2 text-xs text-[var(--muted)] backdrop-blur sm:px-4">
@@ -3194,20 +3916,97 @@ export default function Home() {
                         </div>
                       </div>
 
-                      <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto p-3 sm:p-5">
-                        <div className="relative rounded-xl border border-[rgba(var(--line-rgb),0.2)] bg-white/70 p-2 shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)]">
-                          <PixelatedPreviewCanvas
-                            canvasRef={pixelatedCanvasRef}
-                            mappedPixelData={mappedPixelData}
-                            gridDimensions={gridDimensions}
-                            isManualColoringMode={isManualColoringMode}
-                            onInteraction={handleCanvasInteraction}
-                            highlightColorKey={highlightColorKey}
-                            onHighlightComplete={handleHighlightComplete}
-                            panMode={isManualColoringMode && activeEditorTool === 'pan'}
+                      {workspaceMode === 'focus' ? (
+                        <div className="focus-stage flex min-h-0 flex-1 flex-col">
+                          <ColorStatusBar
+                            currentColor={focusState.currentColor}
+                            colorInfo={currentFocusColorInfo}
+                            progressPercentage={focusProgressPercentage}
                           />
+                          <div className="min-h-0 flex-1 p-3">
+                            <FocusCanvas
+                              mappedPixelData={mappedPixelData}
+                              gridDimensions={gridDimensions}
+                              currentColor={focusState.currentColor}
+                              completedCells={focusState.completedCells}
+                              recommendedCell={focusState.recommendedCell}
+                              recommendedRegion={focusState.recommendedRegion}
+                              canvasScale={focusState.canvasScale}
+                              canvasOffset={focusState.canvasOffset}
+                              gridSectionInterval={focusState.gridSectionInterval}
+                              showSectionLines={focusState.showSectionLines}
+                              sectionLineColor={focusState.sectionLineColor}
+                              onCellClick={handleFocusCellClick}
+                              onScaleChange={scale => setFocusState(prev => ({ ...prev, canvasScale: scale }))}
+                              onOffsetChange={offset => setFocusState(prev => ({ ...prev, canvasOffset: offset }))}
+                            />
+                          </div>
+                          <div className="focus-bottom-palette border-t border-[rgba(var(--line-rgb),0.14)] bg-[rgba(var(--panel-rgb),0.68)] px-3 py-2 backdrop-blur-xl">
+                            <div className="mb-2 flex items-center justify-between text-xs">
+                              <button type="button" onClick={handleFocusLocateRecommended} className="glass-action min-h-[36px] px-3 font-medium">定位下一块</button>
+                              <button type="button" onClick={handleFocusPauseToggle} className={`glass-action min-h-[36px] px-3 font-semibold tabular-nums ${focusState.isPaused ? 'glass-action-active' : ''}`}>
+                                {focusState.isPaused ? '继续' : '暂停'} · {formatFocusTime(focusState.totalElapsedTime)}
+                              </button>
+                            </div>
+                            <div className="flex gap-2 overflow-x-auto pb-1">
+                              {availableFocusColors.map((color, index) => {
+                                const pct = color.total > 0 ? Math.round((color.completed / color.total) * 100) : 0;
+                                const isActive = color.color === focusState.currentColor;
+                                return (
+                                  <button
+                                    key={color.color}
+                                    type="button"
+                                    onClick={() => handleFocusColorChange(color.color)}
+                                    className={`focus-color-row min-w-[88px] rounded-xl border p-2 text-left transition ${isActive ? 'border-[rgba(var(--accent-rgb),0.58)] bg-[rgba(var(--accent-rgb),0.14)]' : 'border-[rgba(var(--line-rgb),0.14)] bg-white/50 hover:bg-white/72'}`}
+                                    style={{ animationDelay: `${Math.min(index * 16, 260)}ms` }}
+                                  >
+                                    <span className="mb-1 block h-5 w-full rounded-md border border-black/10" style={{ backgroundColor: color.color }} />
+                                    <span className="block truncate text-[11px] font-bold text-[var(--text)]">{color.name}</span>
+                                    <span className="block text-[10px] text-[var(--muted)]">{color.completed}/{color.total} · {pct}%</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className={`relative flex min-h-0 flex-1 items-center justify-center overflow-auto p-3 sm:p-5 ${workspaceMode === 'preview' ? 'preview-stage' : 'editor-stage'}`}>
+                          <div
+                            className={`preview-board relative rounded-xl border border-[rgba(var(--line-rgb),0.2)] p-2 shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)] preview-material-${previewSettings.material}`}
+                            style={workspaceMode === 'preview' ? previewBoardStyle : { background: 'rgba(255,255,255,0.7)' }}
+                          >
+                            <div style={workspaceMode === 'preview' ? previewCanvasWrapStyle : undefined}>
+                              <PixelatedPreviewCanvas
+                                canvasRef={pixelatedCanvasRef}
+                                mappedPixelData={mappedPixelData}
+                                gridDimensions={gridDimensions}
+                                isManualColoringMode={isManualColoringMode}
+                                onInteraction={handleCanvasInteraction}
+                                highlightColorKey={highlightColorKey}
+                                onHighlightComplete={handleHighlightComplete}
+                                panMode={isManualColoringMode && activeEditorTool === 'pan'}
+                                dragPaintMode={isManualColoringMode && (activeEditorTool === 'brush' || activeEditorTool === 'eraser')}
+                              />
+                            </div>
+                            {workspaceMode === 'preview' && previewSettings.brandText.trim() && previewSettings.brandOpacity > 0 && (
+                              <div
+                                className="pointer-events-none absolute bottom-4 right-4 rounded-lg bg-black/45 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur"
+                                style={{ opacity: previewSettings.brandOpacity / 100 }}
+                              >
+                                {previewSettings.brandText}
+                              </div>
+                            )}
+                          </div>
+                          {workspaceMode === 'edit' && showEditorMinimap && (
+                            <EditorMinimap
+                              mappedPixelData={mappedPixelData}
+                              gridDimensions={gridDimensions}
+                              targetCanvasRef={pixelatedCanvasRef}
+                              onClose={() => setShowEditorMinimap(false)}
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <label className="relative z-10 m-auto flex max-w-sm cursor-pointer flex-col items-center gap-4 overflow-hidden rounded-2xl border border-dashed border-[rgba(var(--line-rgb),0.32)] bg-white/52 px-8 py-10 text-center transition hover:border-[rgba(var(--accent-rgb),0.45)] hover:bg-white/70">
@@ -3233,53 +4032,93 @@ export default function Home() {
                         selectedColor={selectedColor}
                         fallbackColor={currentGridColors[0] || fullPaletteColors[0] || null}
                         selectedColorSystem={selectedColorSystem}
+                        showMinimap={showEditorMinimap}
                         onToolChange={handleEditorToolChange}
-                      />
-                      <EditorSidePanel
-                        activeTool={activeEditorTool}
-                        selectedColor={selectedColor}
-                        selectedColorSystem={selectedColorSystem}
-                        currentColors={currentGridColors}
-                        fullPaletteColors={fullPaletteColors}
-                        showFullPalette={showFullPalette}
-                        onToggleFullPalette={handleToggleFullPalette}
-                        onColorSelect={handleColorSelect}
-                        onHighlightColor={handleHighlightColor}
-                        brushSize={brushSize}
-                        onBrushSizeChange={setBrushSize}
-                        brushMirrorX={brushMirrorX}
-                        onBrushMirrorXChange={setBrushMirrorX}
-                        brushMirrorY={brushMirrorY}
-                        onBrushMirrorYChange={setBrushMirrorY}
-                        eraserSize={eraserSize}
-                        onEraserSizeChange={setEraserSize}
-                        lineSize={lineSize}
-                        onLineSizeChange={setLineSize}
-                        lineMirrorX={lineMirrorX}
-                        onLineMirrorXChange={setLineMirrorX}
-                        lineMirrorY={lineMirrorY}
-                        onLineMirrorYChange={setLineMirrorY}
-                        rectangleSize={rectangleSize}
-                        onRectangleSizeChange={setRectangleSize}
-                        rectangleFilled={rectangleFilled}
-                        onRectangleFilledChange={setRectangleFilled}
-                        rectangleMirrorX={rectangleMirrorX}
-                        onRectangleMirrorXChange={setRectangleMirrorX}
-                        rectangleMirrorY={rectangleMirrorY}
-                        onRectangleMirrorYChange={setRectangleMirrorY}
-                        colorReplaceState={colorReplaceState}
-                        onColorReplaceToggle={handleColorReplaceToggle}
-                        onRegionErase={handleRegionEraseRequest}
-                        selectionArea={selectionArea}
-                        pendingLineStart={pendingLineStart}
-                        pendingRectangleStart={pendingRectangleStart}
-                        onCancelPendingShape={resetPendingEditorGestures}
+                        onToggleMinimap={() => setShowEditorMinimap(prev => !prev)}
                       />
                     </>
                   )}
                 </div>
               </main>
             </div>
+
+            {mappedPixelData && gridDimensions && (
+              <div className="hidden min-h-0 w-[320px] flex-shrink-0 lg:flex">
+                {workspaceMode === 'edit' ? (
+                  <EditorSidePanel
+                    activeTool={activeEditorTool}
+                    selectedColor={selectedColor}
+                    selectedColorSystem={selectedColorSystem}
+                    currentColors={currentGridColors}
+                    fullPaletteColors={fullPaletteColors}
+                    showFullPalette={showFullPalette}
+                    onToggleFullPalette={handleToggleFullPalette}
+                    onColorSelect={handleColorSelect}
+                    onHighlightColor={handleHighlightColor}
+                    brushSize={brushSize}
+                    onBrushSizeChange={setBrushSize}
+                    brushMirrorX={brushMirrorX}
+                    onBrushMirrorXChange={setBrushMirrorX}
+                    brushMirrorY={brushMirrorY}
+                    onBrushMirrorYChange={setBrushMirrorY}
+                    eraserSize={eraserSize}
+                    onEraserSizeChange={setEraserSize}
+                    lineSize={lineSize}
+                    onLineSizeChange={setLineSize}
+                    lineMirrorX={lineMirrorX}
+                    onLineMirrorXChange={setLineMirrorX}
+                    lineMirrorY={lineMirrorY}
+                    onLineMirrorYChange={setLineMirrorY}
+                    rectangleSize={rectangleSize}
+                    onRectangleSizeChange={setRectangleSize}
+                    rectangleFilled={rectangleFilled}
+                    onRectangleFilledChange={setRectangleFilled}
+                    rectangleMirrorX={rectangleMirrorX}
+                    onRectangleMirrorXChange={setRectangleMirrorX}
+                    rectangleMirrorY={rectangleMirrorY}
+                    onRectangleMirrorYChange={setRectangleMirrorY}
+                    colorReplaceState={colorReplaceState}
+                    onColorReplaceToggle={handleColorReplaceToggle}
+                    onRegionErase={handleRegionEraseRequest}
+                    selectionArea={selectionArea}
+                    pendingLineStart={pendingLineStart}
+                    pendingRectangleStart={pendingRectangleStart}
+                    onCancelPendingShape={resetPendingEditorGestures}
+                  />
+                ) : workspaceMode === 'preview' ? (
+                  <PreviewSidePanel
+                    settings={previewSettings}
+                    onSettingsChange={setPreviewSettings}
+                    onDownload={() => setIsDownloadSettingsOpen(true)}
+                  />
+                ) : workspaceMode === 'focus' ? (
+                  <FocusSidePanel
+                    focusState={focusState}
+                    onFocusStateChange={setFocusState}
+                    onExportProgress={handleFocusExportProgress}
+                    onResetProgress={handleFocusResetProgress}
+                  />
+                ) : (
+                  <aside className="editor-side-panel flex h-full w-full flex-col overflow-hidden rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.84)] p-3 text-[var(--text)] shadow-[-18px_0_48px_rgba(var(--shadow-rgb),0.12)] backdrop-blur-2xl">
+                    <section className="settings-panel-card">
+                      <div className="mb-3 text-sm font-bold">优化</div>
+                      <div className="space-y-3 text-xs text-[var(--muted)]">
+                        <label className="grid gap-1">
+                          横轴格数
+                          <input id="granularityInput" type="number" value={granularityInput} onChange={handleGranularityInputChange} min="10" max="300" className="rounded-lg border border-[rgba(var(--line-rgb),0.22)] bg-white/68 px-2 py-2 text-xs text-[var(--text)] outline-none focus:border-[rgba(var(--accent-rgb),0.55)]" />
+                        </label>
+                        <label className="grid gap-1">
+                          颜色合并阈值
+                          <input id="similarityThresholdInput" type="number" value={similarityThresholdInput} onChange={handleSimilarityThresholdInputChange} min="0" max="100" className="rounded-lg border border-[rgba(var(--line-rgb),0.22)] bg-white/68 px-2 py-2 text-xs text-[var(--text)] outline-none focus:border-[rgba(var(--accent-rgb),0.55)]" />
+                        </label>
+                        <button type="button" onClick={handleConfirmParameters} className="glass-action glass-action-primary min-h-[40px] w-full px-3 font-medium">应用参数</button>
+                        <button type="button" onClick={handleAutoRemoveBackground} className="glass-action min-h-[40px] w-full px-3 font-medium">一键去背景</button>
+                      </div>
+                    </section>
+                  </aside>
+                )}
+              </div>
+            )}
 
           </div>
         </div>
@@ -3522,16 +4361,21 @@ export default function Home() {
         themeStyle={appearanceStyle}
       />
 
-      <FocusModePreDownloadModal
-        isOpen={isFocusModePreDownloadModalOpen}
-        onClose={() => setIsFocusModePreDownloadModalOpen(false)}
-        onProceedWithoutDownload={handleProceedToFocusMode}
-        mappedPixelData={mappedPixelData}
-        gridDimensions={gridDimensions}
-        selectedColorSystem={selectedColorSystem}
-        themeClassName={`theme-${appearanceSettings.theme}`}
-        themeStyle={appearanceStyle}
-      />
+      {workspaceMode === 'focus' && mappedPixelData && gridDimensions && (
+        <>
+          <CelebrationAnimation
+            isVisible={focusState.showCelebration}
+            onComplete={handleFocusCelebrationComplete}
+          />
+          <CompletionCard
+            isVisible={focusState.showCompletionCard}
+            mappedPixelData={mappedPixelData}
+            gridDimensions={gridDimensions}
+            totalElapsedTime={focusState.totalElapsedTime}
+            onClose={() => setFocusState(prev => ({ ...prev, showCompletionCard: false }))}
+          />
+        </>
+      )}
 
       {toastMessage && (
         <div
