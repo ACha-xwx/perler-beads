@@ -48,6 +48,9 @@ import { loadPaletteSelections, savePaletteSelections, presetToSelections, Palet
 import { TRANSPARENT_KEY, transparentColorData } from '../utils/pixelEditingUtils';
 import FocusCanvas from '../components/FocusCanvas';
 import ColorStatusBar from '../components/ColorStatusBar';
+import ColorPanel from '../components/ColorPanel';
+import ProgressBar from '../components/ProgressBar';
+import ToolBar from '../components/ToolBar';
 import CelebrationAnimation from '../components/CelebrationAnimation';
 import CompletionCard from '../components/CompletionCard';
 import {
@@ -219,6 +222,26 @@ const floatAnimation = `
   @keyframes optionRowIn {
     from { opacity: 0; transform: translateX(14px) scale(0.985); }
     to { opacity: 1; transform: translateX(0) scale(1); }
+  }
+
+  @keyframes toolbarSlideUp {
+    from { opacity: 0; transform: translateY(18px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes focusChipPop {
+    from { opacity: 0; transform: translateY(10px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes focusBeadPulse {
+    0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.34), 0 0 0 0 rgba(var(--accent-rgb),0.24); }
+    50% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.34), 0 0 0 10px rgba(var(--accent-rgb),0); }
+  }
+
+  @keyframes brandStripIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .animate-float {
@@ -436,7 +459,39 @@ const floatAnimation = `
   }
 
   .focus-bottom-palette {
-    animation: toolbar-slide-up 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: toolbarSlideUp 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .focus-status-bar,
+  .focus-progress-bar,
+  .focus-toolbar {
+    animation: toolbarSlideUp 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .focus-current-bead {
+    animation: focusBeadPulse 2.4s ease-in-out infinite;
+  }
+
+  .focus-color-chip {
+    animation: focusChipPop 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+  }
+
+  .focus-color-chip:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 14px 26px rgba(var(--shadow-rgb),0.12);
+  }
+
+  .focus-color-chip-active {
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb),0.18), 0 16px 30px rgba(var(--shadow-rgb),0.12);
+  }
+
+  .focus-canvas-transform {
+    will-change: transform;
+  }
+
+  .preview-brand-strip {
+    animation: brandStripIn 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
   .settings-panel-card {
@@ -796,7 +851,13 @@ const floatAnimation = `
     .preview-material-glitter::after,
     .floating-minimap,
     .download-option-row,
-    .focus-bottom-palette {
+    .focus-bottom-palette,
+    .focus-status-bar,
+    .focus-progress-bar,
+    .focus-toolbar,
+    .focus-current-bead,
+    .focus-color-chip,
+    .preview-brand-strip {
       animation: none;
     }
 
@@ -1219,9 +1280,7 @@ export default function Home() {
     totalBeadCount: number;
   }
   const [editHistory, setEditHistory] = useState<EditSnapshot[]>([]);
-
-  // 新增：一键去背景撤回快照（单步）
-  const [bgRemovalSnapshot, setBgRemovalSnapshot] = useState<EditSnapshot | null>(null);
+  const [redoHistory, setRedoHistory] = useState<EditSnapshot[]>([]);
 
   // 新增：轻量提示
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1331,32 +1390,46 @@ export default function Home() {
       totalBeadCount,
     };
     setEditHistory(prev => [...prev.slice(-49), snapshot]);
+    setRedoHistory([]);
   }, [mappedPixelData, colorCounts, totalBeadCount]);
 
   // 编辑模式多步撤回
   const handleUndoEdit = useCallback(() => {
-    if (editHistory.length === 0) return;
+    if (editHistory.length === 0 || !mappedPixelData) return;
     const snapshot = editHistory[editHistory.length - 1];
+    const currentSnapshot: EditSnapshot = {
+      mappedPixelData: mappedPixelData.map(row => row.map(cell => ({ ...cell }))),
+      colorCounts: colorCounts ? { ...colorCounts } : {},
+      totalBeadCount,
+    };
+    setRedoHistory(prev => [...prev.slice(-49), currentSnapshot]);
     setMappedPixelData(snapshot.mappedPixelData);
     setColorCounts(snapshot.colorCounts);
     setTotalBeadCount(snapshot.totalBeadCount);
     setEditHistory(prev => prev.slice(0, -1));
-    showToast('已撤回上一步');
-  }, [editHistory, showToast]);
+    showToast('已撤销上一步');
+  }, [editHistory, mappedPixelData, colorCounts, totalBeadCount, showToast]);
 
-  // 一键去背景单步撤回
-  const handleUndoBgRemoval = useCallback(() => {
-    if (!bgRemovalSnapshot) return;
-    setMappedPixelData(bgRemovalSnapshot.mappedPixelData);
-    setColorCounts(bgRemovalSnapshot.colorCounts);
-    setTotalBeadCount(bgRemovalSnapshot.totalBeadCount);
-    setBgRemovalSnapshot(null);
-    showToast('已撤回背景去除');
-  }, [bgRemovalSnapshot, showToast]);
+  const handleRedoEdit = useCallback(() => {
+    if (redoHistory.length === 0 || !mappedPixelData) return;
+    const snapshot = redoHistory[redoHistory.length - 1];
+    const currentSnapshot: EditSnapshot = {
+      mappedPixelData: mappedPixelData.map(row => row.map(cell => ({ ...cell }))),
+      colorCounts: colorCounts ? { ...colorCounts } : {},
+      totalBeadCount,
+    };
+    setEditHistory(prev => [...prev.slice(-49), currentSnapshot]);
+    setMappedPixelData(snapshot.mappedPixelData);
+    setColorCounts(snapshot.colorCounts);
+    setTotalBeadCount(snapshot.totalBeadCount);
+    setRedoHistory(prev => prev.slice(0, -1));
+    showToast('已恢复上一步');
+  }, [redoHistory, mappedPixelData, colorCounts, totalBeadCount, showToast]);
 
   // 清空编辑历史（参数变化、退出编辑模式等时调用）
   const clearEditHistory = useCallback(() => {
     setEditHistory([]);
+    setRedoHistory([]);
   }, []);
 
   // 放大镜像素编辑处理函数
@@ -1655,7 +1728,6 @@ export default function Home() {
       setWorkspaceMode('preview');
       intendedWorkspaceModeRef.current = 'preview';
       resetPendingEditorGestures();
-      setBgRemovalSnapshot(null);
       clearEditHistory();
       showToast('已恢复本机草稿');
     } catch (error) {
@@ -2249,7 +2321,6 @@ export default function Home() {
   // 当 remapTrigger 变化时清空撤回历史（参数调整/颜色排除/新图上传等均会触发 remap）
   useEffect(() => {
     clearEditHistory();
-    setBgRemovalSnapshot(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remapTrigger]);
 
@@ -2430,7 +2501,6 @@ export default function Home() {
         setIsManualColoringMode(false);
         setSelectedColor(null);
         clearEditHistory();
-        setBgRemovalSnapshot(null);
     };
 
   // 一键去背景：识别边缘主色并洪水填充去除
@@ -2440,14 +2510,11 @@ export default function Home() {
       return;
     }
 
-    // 保存快照用于单步撤回
-    setBgRemovalSnapshot({
+    const snapshot: EditSnapshot = {
       mappedPixelData: mappedPixelData.map(row => row.map(cell => ({ ...cell }))),
       colorCounts: colorCounts ? { ...colorCounts } : {},
       totalBeadCount,
-    });
-    // 去背景会大幅改变数据，清空编辑撤回历史
-    setEditHistory([]);
+    };
 
     const { N, M } = gridDimensions;
     const borderCounts = new Map<string, number>();
@@ -2508,6 +2575,9 @@ export default function Home() {
       alert('未找到可去除的背景区域。');
       return;
     }
+
+    setEditHistory(prev => [...prev.slice(-49), snapshot]);
+    setRedoHistory([]);
 
     while (stack.length > 0) {
       const { row, col } = stack.pop()!;
@@ -3791,10 +3861,10 @@ export default function Home() {
               <button
                 type="button"
                 onClick={handleUndoEdit}
-                disabled={!isManualColoringMode || editHistory.length === 0}
+                disabled={editHistory.length === 0}
                 className="glass-action grid min-h-[44px] min-w-[44px] place-items-center disabled:cursor-not-allowed disabled:opacity-35"
-                title="撤销编辑"
-                aria-label="撤销编辑"
+                title="撤销上一步"
+                aria-label="撤销上一步"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
                   <path d="M9 15l-6-6 6-6" />
@@ -3804,16 +3874,15 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={handleUndoBgRemoval}
-                disabled={!bgRemovalSnapshot}
+                onClick={handleRedoEdit}
+                disabled={redoHistory.length === 0}
                 className="glass-action grid min-h-[44px] min-w-[44px] place-items-center disabled:cursor-not-allowed disabled:opacity-35"
-                title="撤回去背景"
-                aria-label="撤回去背景"
+                title="恢复上一步"
+                aria-label="恢复上一步"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                  <path d="M15 9l6-6" />
-                  <path d="M21 3v6h-6" />
-                  <path d="M21 9H10a6 6 0 00-6 6v3" />
+                  <path d="M15 14l5-5-5-5" />
+                  <path d="M20 9H9a6 6 0 00-6 6v3" />
                 </svg>
               </button>
 
@@ -3922,6 +3991,9 @@ export default function Home() {
                             currentColor={focusState.currentColor}
                             colorInfo={currentFocusColorInfo}
                             progressPercentage={focusProgressPercentage}
+                            elapsedTime={formatFocusTime(focusState.totalElapsedTime)}
+                            isPaused={focusState.isPaused}
+                            onPauseToggle={handleFocusPauseToggle}
                           />
                           <div className="min-h-0 flex-1 p-3">
                             <FocusCanvas
@@ -3941,41 +4013,49 @@ export default function Home() {
                               onOffsetChange={offset => setFocusState(prev => ({ ...prev, canvasOffset: offset }))}
                             />
                           </div>
+                          <ProgressBar
+                            progressPercentage={focusProgressPercentage}
+                            recommendedCell={focusState.recommendedCell}
+                            colorInfo={currentFocusColorInfo}
+                          />
                           <div className="focus-bottom-palette border-t border-[rgba(var(--line-rgb),0.14)] bg-[rgba(var(--panel-rgb),0.68)] px-3 py-2 backdrop-blur-xl">
-                            <div className="mb-2 flex items-center justify-between text-xs">
-                              <button type="button" onClick={handleFocusLocateRecommended} className="glass-action min-h-[36px] px-3 font-medium">定位下一块</button>
-                              <button type="button" onClick={handleFocusPauseToggle} className={`glass-action min-h-[36px] px-3 font-semibold tabular-nums ${focusState.isPaused ? 'glass-action-active' : ''}`}>
-                                {focusState.isPaused ? '继续' : '暂停'} · {formatFocusTime(focusState.totalElapsedTime)}
-                              </button>
-                            </div>
-                            <div className="flex gap-2 overflow-x-auto pb-1">
+                            <div className="mb-2 flex gap-2 overflow-x-auto pb-1">
                               {availableFocusColors.map((color, index) => {
                                 const pct = color.total > 0 ? Math.round((color.completed / color.total) * 100) : 0;
                                 const isActive = color.color === focusState.currentColor;
+                                const isDone = pct >= 100;
                                 return (
                                   <button
                                     key={color.color}
                                     type="button"
                                     onClick={() => handleFocusColorChange(color.color)}
-                                    className={`focus-color-row min-w-[88px] rounded-xl border p-2 text-left transition ${isActive ? 'border-[rgba(var(--accent-rgb),0.58)] bg-[rgba(var(--accent-rgb),0.14)]' : 'border-[rgba(var(--line-rgb),0.14)] bg-white/50 hover:bg-white/72'}`}
-                                    style={{ animationDelay: `${Math.min(index * 16, 260)}ms` }}
+                                    className={`focus-color-chip min-w-[78px] rounded-xl border px-2 py-2 text-left transition ${isActive ? 'focus-color-chip-active border-[rgba(var(--accent-rgb),0.58)] bg-[rgba(var(--accent-rgb),0.14)]' : 'border-[rgba(var(--line-rgb),0.14)] bg-white/50 hover:bg-white/72'} ${isDone ? 'opacity-70' : ''}`}
+                                    style={{ animationDelay: `${Math.min(index * 14, 240)}ms` }}
+                                    title={`${color.name} ${color.completed}/${color.total}`}
                                   >
-                                    <span className="mb-1 block h-5 w-full rounded-md border border-black/10" style={{ backgroundColor: color.color }} />
-                                    <span className="block truncate text-[11px] font-bold text-[var(--text)]">{color.name}</span>
-                                    <span className="block text-[10px] text-[var(--muted)]">{color.completed}/{color.total} · {pct}%</span>
+                                    <span className="mx-auto mb-1 block h-7 w-7 rounded-full border border-black/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]" style={{ backgroundColor: color.color }} />
+                                    <span className="block truncate text-center text-[11px] font-bold text-[var(--text)]">{color.name}</span>
+                                    <span className="block text-center text-[10px] tabular-nums text-[var(--muted)]">{pct}%</span>
                                   </button>
                                 );
                               })}
                             </div>
+                            <ToolBar
+                              onColorSelect={() => setFocusState(prev => ({ ...prev, showColorPanel: true }))}
+                              onLocate={handleFocusLocateRecommended}
+                              onPause={handleFocusPauseToggle}
+                              isPaused={focusState.isPaused}
+                              elapsedTime={formatFocusTime(focusState.totalElapsedTime)}
+                            />
                           </div>
                         </div>
                       ) : (
                         <div className={`relative flex min-h-0 flex-1 items-center justify-center overflow-auto p-3 sm:p-5 ${workspaceMode === 'preview' ? 'preview-stage' : 'editor-stage'}`}>
                           <div
-                            className={`preview-board relative rounded-xl border border-[rgba(var(--line-rgb),0.2)] p-2 shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)] preview-material-${previewSettings.material}`}
+                            className={`preview-board relative overflow-hidden rounded-xl border border-[rgba(var(--line-rgb),0.2)] p-2 shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)] ${workspaceMode === 'preview' ? `preview-material-${previewSettings.material}` : ''}`}
                             style={workspaceMode === 'preview' ? previewBoardStyle : { background: 'rgba(255,255,255,0.7)' }}
                           >
-                            <div style={workspaceMode === 'preview' ? previewCanvasWrapStyle : undefined}>
+                            <div className="preview-art-surface relative z-10" style={workspaceMode === 'preview' ? previewCanvasWrapStyle : undefined}>
                               <PixelatedPreviewCanvas
                                 canvasRef={pixelatedCanvasRef}
                                 mappedPixelData={mappedPixelData}
@@ -3990,7 +4070,7 @@ export default function Home() {
                             </div>
                             {workspaceMode === 'preview' && previewSettings.brandText.trim() && previewSettings.brandOpacity > 0 && (
                               <div
-                                className="pointer-events-none absolute bottom-4 right-4 rounded-lg bg-black/45 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur"
+                                className="preview-brand-strip pointer-events-none relative z-10 mt-2 flex min-h-[44px] items-center justify-end rounded-lg border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.72)] px-4 py-2 text-xs font-semibold text-[var(--text)] backdrop-blur"
                                 style={{ opacity: previewSettings.brandOpacity / 100 }}
                               >
                                 {previewSettings.brandText}
@@ -4323,6 +4403,15 @@ export default function Home() {
               />
           </div>
         </div>
+      )}
+
+      {workspaceMode === 'focus' && focusState.showColorPanel && (
+        <ColorPanel
+          colors={availableFocusColors}
+          currentColor={focusState.currentColor}
+          onColorSelect={handleFocusColorChange}
+          onClose={() => setFocusState(prev => ({ ...prev, showColorPanel: false }))}
+        />
       )}
 
       {isManualColoringMode && activeEditorTool === 'selection' && (

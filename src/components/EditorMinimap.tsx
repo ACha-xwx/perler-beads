@@ -20,7 +20,7 @@ export default function EditorMinimap({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; left: number; top: number } | null>(null);
   const resizeRef = useRef<{ startX: number; startY: number; size: number } | null>(null);
-  const [position, setPosition] = useState({ left: 14, top: 14 });
+  const [position, setPosition] = useState({ left: 76, top: 14 });
   const [size, setSize] = useState(132);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function EditorMinimap({
     const { N, M } = gridDimensions;
     const pixelRatio = window.devicePixelRatio || 1;
     const width = size;
-    const height = Math.max(M / N * width, MIN_SIZE * 0.6);
+    const height = Math.max((M / N) * width, MIN_SIZE * 0.6);
     canvas.width = Math.round(width * pixelRatio);
     canvas.height = Math.round(height * pixelRatio);
     canvas.style.width = `${width}px`;
@@ -135,7 +135,7 @@ export default function EditorMinimap({
           type="button"
           data-minimap-control
           onClick={onClose}
-          className="grid h-6 w-6 place-items-center rounded-md text-[var(--muted)] hover:bg-[rgba(var(--accent-rgb),0.1)] hover:text-[var(--text)]"
+          className="grid h-6 w-6 place-items-center rounded-md text-[var(--muted)] transition hover:bg-[rgba(var(--accent-rgb),0.1)] hover:text-[var(--text)]"
           aria-label="隐藏小地图"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="h-3.5 w-3.5">

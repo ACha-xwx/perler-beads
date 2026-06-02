@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MappedPixel } from '../utils/pixelation';
 
 interface FocusCanvasProps {
@@ -18,6 +18,8 @@ interface FocusCanvasProps {
   onOffsetChange: (offset: { x: number; y: number }) => void;
 }
 
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+
 const FocusCanvas: React.FC<FocusCanvasProps> = ({
   mappedPixelData,
   gridDimensions,
@@ -32,111 +34,117 @@ const FocusCanvas: React.FC<FocusCanvasProps> = ({
   sectionLineColor,
   onCellClick,
   onScaleChange,
-  onOffsetChange
+  onOffsetChange,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{
+    startX: number;
+    startY: number;
+    lastX: number;
+    lastY: number;
+    offsetX: number;
+    offsetY: number;
+    moved: boolean;
+  } | null>(null);
+  const pinchRef = useRef<{ distance: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [lastPanPoint, setLastPanPoint] = useState<{ x: number; y: number } | null>(null);
-  const [lastPinchDistance, setLastPinchDistance] = useState<number | null>(null);
 
-  // 计算格子大小
   const cellSize = Math.max(15, Math.min(40, 300 / Math.max(gridDimensions.N, gridDimensions.M)));
+  const recommendedSet = useMemo(
+    () => new Set((recommendedRegion || []).map(cell => `${cell.row},${cell.col}`)),
+    [recommendedRegion]
+  );
 
-  // 渲染画布
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !mappedPixelData) return;
+    if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // 设置画布尺寸
     const canvasWidth = gridDimensions.N * cellSize;
     const canvasHeight = gridDimensions.M * cellSize;
-    
+
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
     canvas.style.width = `${canvasWidth}px`;
     canvas.style.height = `${canvasHeight}px`;
 
-    // 清空画布
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    ctx.imageSmoothingEnabled = false;
 
-    // 渲染每个格子
     for (let row = 0; row < gridDimensions.M; row++) {
       for (let col = 0; col < gridDimensions.N; col++) {
-        const pixel = mappedPixelData[row][col];
+        const pixel = mappedPixelData[row]?.[col];
+        if (!pixel) continue;
+
         const x = col * cellSize;
         const y = row * cellSize;
         const cellKey = `${row},${col}`;
+        const isCurrent = pixel.color === currentColor;
+        const isCompleted = completedCells.has(cellKey);
+        const isRecommended = recommendedSet.has(cellKey);
 
-        // 确定格子颜色
-        let fillColor = pixel.color;
-
-        // 如果不是当前颜色，显示为灰度
-        if (pixel.color !== currentColor) {
-          // 转换为灰度
-          const hex = pixel.color.replace('#', '');
-          const r = parseInt(hex.substr(0, 2), 16);
-          const g = parseInt(hex.substr(2, 2), 16);
-          const b = parseInt(hex.substr(4, 2), 16);
-          const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-          fillColor = `rgb(${gray}, ${gray}, ${gray})`;
+        if (pixel.isExternal) {
+          ctx.fillStyle = '#f4f4ef';
+        } else if (isCurrent) {
+          ctx.fillStyle = pixel.color;
+        } else {
+          ctx.fillStyle = '#e2e2dc';
         }
 
-        // 绘制格子背景
-        ctx.fillStyle = fillColor;
         ctx.fillRect(x, y, cellSize, cellSize);
 
-        // 如果是已完成的格子且是当前颜色，添加勾选标记
-        if (completedCells.has(cellKey) && pixel.color === currentColor) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.62)';
+        if (!pixel.isExternal && !isCurrent) {
+          ctx.fillStyle = 'rgba(255,255,255,0.34)';
           ctx.fillRect(x, y, cellSize, cellSize);
-          
-          // 绘制勾选图标
-          ctx.strokeStyle = '#111111';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(x + cellSize * 0.2, y + cellSize * 0.5);
-          ctx.lineTo(x + cellSize * 0.4, y + cellSize * 0.7);
-          ctx.lineTo(x + cellSize * 0.8, y + cellSize * 0.3);
-          ctx.stroke();
         }
 
-        // 如果是推荐区域的一部分，添加高亮边框
-        const isInRecommendedRegion = recommendedRegion?.some(cell => 
-          cell.row === row && cell.col === col
-        );
-        if (isInRecommendedRegion) {
-          ctx.strokeStyle = '#111111';
-          ctx.lineWidth = 3;
-          ctx.setLineDash([5, 5]);
-          ctx.strokeRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
+        ctx.strokeStyle = isCurrent ? 'rgba(20,20,18,0.34)' : 'rgba(20,20,18,0.08)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, cellSize - 1, cellSize - 1);
+
+        if (isRecommended) {
+          ctx.strokeStyle = 'rgba(17,17,15,0.9)';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([cellSize * 0.28, cellSize * 0.18]);
+          ctx.strokeRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
           ctx.setLineDash([]);
         }
-        
-        // 如果是推荐区域的中心点，添加特殊标记
-        if (recommendedCell && recommendedCell.row === row && recommendedCell.col === col && isInRecommendedRegion) {
-          // 绘制中心点标记
-          ctx.fillStyle = '#111111';
+
+        if (isCompleted && isCurrent) {
+          ctx.fillStyle = 'rgba(255,255,255,0.68)';
+          ctx.fillRect(x, y, cellSize, cellSize);
+          ctx.strokeStyle = '#11110f';
+          ctx.lineWidth = Math.max(2, cellSize * 0.09);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
           ctx.beginPath();
-          ctx.arc(x + cellSize / 2, y + cellSize / 2, 4, 0, 2 * Math.PI);
-          ctx.fill();
+          ctx.moveTo(x + cellSize * 0.22, y + cellSize * 0.52);
+          ctx.lineTo(x + cellSize * 0.42, y + cellSize * 0.7);
+          ctx.lineTo(x + cellSize * 0.78, y + cellSize * 0.3);
+          ctx.stroke();
         }
-
-
-
-
       }
     }
 
-    // 绘制分区线（在所有格子绘制完成后）
+    if (recommendedCell) {
+      const x = recommendedCell.col * cellSize;
+      const y = recommendedCell.row * cellSize;
+      ctx.fillStyle = '#11110f';
+      ctx.beginPath();
+      ctx.arc(x + cellSize / 2, y + cellSize / 2, Math.max(3, cellSize * 0.14), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.82)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
     if (showSectionLines) {
       ctx.strokeStyle = sectionLineColor;
       ctx.lineWidth = 2;
-      
-      // 绘制竖直分区线
+      ctx.globalAlpha = 0.88;
+
       for (let col = gridSectionInterval; col < gridDimensions.N; col += gridSectionInterval) {
         const x = col * cellSize;
         ctx.beginPath();
@@ -144,8 +152,7 @@ const FocusCanvas: React.FC<FocusCanvasProps> = ({
         ctx.lineTo(x, canvasHeight);
         ctx.stroke();
       }
-      
-      // 绘制水平分区线
+
       for (let row = gridSectionInterval; row < gridDimensions.M; row += gridSectionInterval) {
         const y = row * cellSize;
         ctx.beginPath();
@@ -153,208 +160,157 @@ const FocusCanvas: React.FC<FocusCanvasProps> = ({
         ctx.lineTo(canvasWidth, y);
         ctx.stroke();
       }
+
+      ctx.globalAlpha = 1;
     }
-  }, [mappedPixelData, gridDimensions, cellSize, currentColor, completedCells, recommendedCell, recommendedRegion, gridSectionInterval, showSectionLines, sectionLineColor]);
+  }, [
+    mappedPixelData,
+    gridDimensions,
+    cellSize,
+    currentColor,
+    completedCells,
+    recommendedSet,
+    recommendedCell,
+    gridSectionInterval,
+    showSectionLines,
+    sectionLineColor,
+  ]);
 
-  // 处理触摸/鼠标事件
-  const getEventPosition = useCallback((event: React.MouseEvent | React.TouchEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-
-    const rect = canvas.getBoundingClientRect();
-    let clientX: number, clientY: number;
-
-    if ('touches' in event) {
-      if (event.touches.length === 0) return null;
-      clientX = event.touches[0].clientX;
-      clientY = event.touches[0].clientY;
-    } else {
-      clientX = event.clientX;
-      clientY = event.clientY;
-    }
-
-    return {
-      x: (clientX - rect.left) / canvasScale,
-      y: (clientY - rect.top) / canvasScale
-    };
-  }, [canvasScale]);
-
-  const getGridPosition = useCallback((x: number, y: number) => {
-    const col = Math.floor(x / cellSize);
-    const row = Math.floor(y / cellSize);
-    
-    if (row >= 0 && row < gridDimensions.M && col >= 0 && col < gridDimensions.N) {
-      return { row, col };
-    }
-    return null;
-  }, [cellSize, gridDimensions]);
-
-  // 计算两指间距离
-  const getTouchDistance = (touches: React.TouchList) => {
-    if (touches.length < 2) return 0;
-    const touch1 = touches[0];
-    const touch2 = touches[1];
-    const dx = touch1.clientX - touch2.clientX;
-    const dy = touch1.clientY - touch2.clientY;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
-
-  // 处理点击
-  const handleClick = useCallback((event: React.MouseEvent | React.TouchEvent) => {
-    event.preventDefault();
-    
-    const pos = getEventPosition(event);
-    if (!pos) return;
-
-    const gridPos = getGridPosition(pos.x, pos.y);
-    if (gridPos) {
-      onCellClick(gridPos.row, gridPos.col);
-    }
-  }, [onCellClick, getEventPosition, getGridPosition]);
-
-  // 处理缩放
-  const handleWheel = useCallback((event: React.WheelEvent) => {
-    event.preventDefault();
-    
-    const delta = event.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.max(0.3, Math.min(3, canvasScale * delta));
-    onScaleChange(newScale);
-  }, [canvasScale, onScaleChange]);
-
-  // 处理双指缩放（触摸）
-  const handleTouchStart = useCallback((event: React.TouchEvent) => {
-    if (event.touches.length === 1) {
-      // 单指拖拽开始
-      setIsDragging(true);
-      setLastPanPoint({
-        x: event.touches[0].clientX,
-        y: event.touches[0].clientY
-      });
-      setLastPinchDistance(null);
-    } else if (event.touches.length === 2) {
-      // 双指缩放开始
-      event.preventDefault();
-      setIsDragging(false);
-      setLastPanPoint(null);
-      setLastPinchDistance(getTouchDistance(event.touches));
-    }
-  }, []);
-
-  const handleTouchMove = useCallback((event: React.TouchEvent) => {
-    event.preventDefault();
-    
-    if (event.touches.length === 1 && isDragging && lastPanPoint) {
-      // 单指拖拽
-      const deltaX = event.touches[0].clientX - lastPanPoint.x;
-      const deltaY = event.touches[0].clientY - lastPanPoint.y;
-      
-      onOffsetChange({
-        x: canvasOffset.x + deltaX,
-        y: canvasOffset.y + deltaY
-      });
-      
-      setLastPanPoint({
-        x: event.touches[0].clientX,
-        y: event.touches[0].clientY
-      });
-    } else if (event.touches.length === 2 && lastPinchDistance !== null) {
-      // 双指缩放处理
-      const currentDistance = getTouchDistance(event.touches);
-      const scaleRatio = currentDistance / lastPinchDistance;
-      
-      // 限制缩放范围并应用缩放
-      const newScale = Math.max(0.3, Math.min(3, canvasScale * scaleRatio));
-      onScaleChange(newScale);
-      
-      // 更新距离记录
-      setLastPinchDistance(currentDistance);
-    }
-  }, [isDragging, lastPanPoint, canvasOffset, onOffsetChange, lastPinchDistance, canvasScale, onScaleChange]);
-
-  const handleTouchEnd = useCallback((event: React.TouchEvent) => {
-    if (event.touches.length === 0) {
-      setIsDragging(false);
-      setLastPanPoint(null);
-      setLastPinchDistance(null);
-      
-      // 如果没有移动太多，视为点击
-      if (!isDragging) {
-        handleClick(event);
-      }
-    } else if (event.touches.length === 1) {
-      // 从双指缩放切换到单指拖拽
-      setLastPinchDistance(null);
-      setIsDragging(true);
-      setLastPanPoint({
-        x: event.touches[0].clientX,
-        y: event.touches[0].clientY
-      });
-    }
-  }, [isDragging, handleClick]);
-
-  // 鼠标拖拽处理
-  const handleMouseDown = useCallback((event: React.MouseEvent) => {
-    setIsDragging(true);
-    setLastPanPoint({
-      x: event.clientX,
-      y: event.clientY
-    });
-  }, []);
-
-  const handleMouseMove = useCallback((event: React.MouseEvent) => {
-    if (isDragging && lastPanPoint) {
-      const deltaX = event.clientX - lastPanPoint.x;
-      const deltaY = event.clientY - lastPanPoint.y;
-      
-      onOffsetChange({
-        x: canvasOffset.x + deltaX,
-        y: canvasOffset.y + deltaY
-      });
-      
-      setLastPanPoint({
-        x: event.clientX,
-        y: event.clientY
-      });
-    }
-  }, [isDragging, lastPanPoint, canvasOffset, onOffsetChange]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-    setLastPanPoint(null);
-  }, []);
-
-  // 渲染画布
   useEffect(() => {
     renderCanvas();
   }, [renderCanvas]);
 
+  const getCanvasPoint = (clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left) / canvasScale,
+      y: (clientY - rect.top) / canvasScale,
+    };
+  };
+
+  const getGridPosition = (clientX: number, clientY: number) => {
+    const point = getCanvasPoint(clientX, clientY);
+    if (!point) return null;
+
+    const col = Math.floor(point.x / cellSize);
+    const row = Math.floor(point.y / cellSize);
+
+    if (row >= 0 && row < gridDimensions.M && col >= 0 && col < gridDimensions.N) {
+      return { row, col };
+    }
+    return null;
+  };
+
+  const getTouchDistance = (touches: React.TouchList) => {
+    if (touches.length < 2) return 0;
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    dragRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      lastX: event.clientX,
+      lastY: event.clientY,
+      offsetX: canvasOffset.x,
+      offsetY: canvasOffset.y,
+      moved: false,
+    };
+    setIsDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+
+    const deltaX = event.clientX - drag.lastX;
+    const deltaY = event.clientY - drag.lastY;
+    const totalDistance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+    if (totalDistance > 4) drag.moved = true;
+
+    drag.offsetX += deltaX;
+    drag.offsetY += deltaY;
+    onOffsetChange({ x: drag.offsetX, y: drag.offsetY });
+
+    drag.lastX = event.clientX;
+    drag.lastY = event.clientY;
+  };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    setIsDragging(false);
+
+    if (!drag || drag.moved) return;
+
+    const gridPos = getGridPosition(event.clientX, event.clientY);
+    if (gridPos) {
+      onCellClick(gridPos.row, gridPos.col);
+    }
+  };
+
+  const handleWheel = (event: React.WheelEvent) => {
+    event.preventDefault();
+    const delta = event.deltaY > 0 ? 0.9 : 1.1;
+    onScaleChange(clamp(canvasScale * delta, 0.3, 3));
+  };
+
+  const handleTouchStart = (event: React.TouchEvent) => {
+    if (event.touches.length === 2) {
+      pinchRef.current = { distance: getTouchDistance(event.touches) };
+      dragRef.current = null;
+      setIsDragging(false);
+    }
+  };
+
+  const handleTouchMove = (event: React.TouchEvent) => {
+    if (event.touches.length !== 2 || !pinchRef.current) return;
+    event.preventDefault();
+    const distance = getTouchDistance(event.touches);
+    if (pinchRef.current.distance <= 0) return;
+    const ratio = distance / pinchRef.current.distance;
+    onScaleChange(clamp(canvasScale * ratio, 0.3, 3));
+    pinchRef.current.distance = distance;
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent) => {
+    if (event.touches.length < 2) {
+      pinchRef.current = null;
+    }
+  };
+
   return (
-    <div 
-      ref={containerRef}
+    <div
       className="focus-canvas-shell h-full w-full overflow-hidden rounded-[22px]"
       style={{ touchAction: 'none' }}
     >
       <div className="flex h-full w-full items-center justify-center">
         <div
-        style={{
-          transform: `scale(${canvasScale}) translate(${canvasOffset.x}px, ${canvasOffset.y}px)`,
-          transformOrigin: 'center center',
-          transition: isDragging ? 'none' : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)'
-        }}
-      >
-        <canvas
-          ref={canvasRef}
-          className="cursor-crosshair rounded-lg border border-[rgba(var(--line-rgb),0.24)] shadow-[0_18px_44px_rgba(var(--shadow-rgb),0.16)]"
-          onClick={handleClick}
-          onWheel={handleWheel}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        />
+          className="focus-canvas-transform"
+          style={{
+            transform: `translate(${canvasOffset.x}px, ${canvasOffset.y}px) scale(${canvasScale})`,
+            transformOrigin: 'center center',
+            transition: isDragging ? 'none' : 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
+        >
+          <canvas
+            ref={canvasRef}
+            className="cursor-grab rounded-lg border border-[rgba(var(--line-rgb),0.24)] shadow-[0_18px_44px_rgba(var(--shadow-rgb),0.16)] active:cursor-grabbing"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          />
         </div>
       </div>
     </div>
