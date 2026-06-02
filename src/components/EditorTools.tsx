@@ -80,6 +80,10 @@ interface EditorSidePanelProps {
   onAddLayer: () => void;
   onLayerSelect: (id: string) => void;
   onToggleLayerVisible: (id: string) => void;
+  onToggleLayerLock: (id: string) => void;
+  onDuplicateLayer: (id: string) => void;
+  onMoveLayer: (id: string, direction: 'up' | 'down') => void;
+  onDeleteLayer: (id: string) => void;
 }
 
 const toolItems: Array<{ key: EditorTool; label: string; icon: React.ReactNode }> = [
@@ -336,6 +340,10 @@ export function EditorSidePanel({
   onAddLayer,
   onLayerSelect,
   onToggleLayerVisible,
+  onToggleLayerLock,
+  onDuplicateLayer,
+  onMoveLayer,
+  onDeleteLayer,
 }: EditorSidePanelProps) {
   const displayColors = showFullPalette ? fullPaletteColors : currentColors;
   const activeToolName = {
@@ -510,6 +518,7 @@ export function EditorSidePanel({
           <div className="space-y-2">
             {layers.map(layer => {
               const isActive = layer.id === activeLayerId;
+              const isBaseLayer = layer.type === 'base';
               return (
                 <button
                   key={layer.id}
@@ -544,8 +553,128 @@ export function EditorSidePanel({
                     </svg>
                   </span>
                   <span className="min-w-0 flex-1 truncate font-semibold text-[var(--text)]">{layer.name}</span>
-                  {layer.locked && <span className="text-[var(--muted)] opacity-70">锁定</span>}
-                  {layer.type === 'sticker' && <span className="text-[var(--muted)] opacity-70">贴纸</span>}
+                  <span className="flex flex-shrink-0 items-center gap-1 text-[var(--muted)]">
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title={layer.locked ? '解锁图层' : '锁定图层'}
+                      onClick={event => {
+                        event.stopPropagation();
+                        onToggleLayerLock(layer.id);
+                      }}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onToggleLayerLock(layer.id);
+                        }
+                      }}
+                      className={`grid h-7 w-7 place-items-center rounded-md ${layer.locked ? 'bg-[rgba(var(--accent-rgb),0.12)] text-[var(--text)]' : 'hover:bg-white/70'}`}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                        {layer.locked ? (
+                          <>
+                            <rect x="5" y="11" width="14" height="10" rx="2" />
+                            <path d="M8 11V7a4 4 0 018 0v4" />
+                          </>
+                        ) : (
+                          <>
+                            <rect x="5" y="11" width="14" height="10" rx="2" />
+                            <path d="M8 11V7a4 4 0 017-2" />
+                          </>
+                        )}
+                      </svg>
+                    </span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title="上移"
+                      onClick={event => {
+                        event.stopPropagation();
+                        onMoveLayer(layer.id, 'up');
+                      }}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onMoveLayer(layer.id, 'up');
+                        }
+                      }}
+                      className="grid h-7 w-7 place-items-center rounded-md hover:bg-white/70"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                        <path d="M18 15l-6-6-6 6" />
+                      </svg>
+                    </span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title="下移"
+                      onClick={event => {
+                        event.stopPropagation();
+                        onMoveLayer(layer.id, 'down');
+                      }}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onMoveLayer(layer.id, 'down');
+                        }
+                      }}
+                      className="grid h-7 w-7 place-items-center rounded-md hover:bg-white/70"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title="复制图层"
+                      onClick={event => {
+                        event.stopPropagation();
+                        onDuplicateLayer(layer.id);
+                      }}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          onDuplicateLayer(layer.id);
+                        }
+                      }}
+                      className="grid h-7 w-7 place-items-center rounded-md hover:bg-white/70"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                      </svg>
+                    </span>
+                    {!isBaseLayer && (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        title="删除图层"
+                        onClick={event => {
+                          event.stopPropagation();
+                          onDeleteLayer(layer.id);
+                        }}
+                        onKeyDown={event => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            onDeleteLayer(layer.id);
+                          }
+                        }}
+                        className="grid h-7 w-7 place-items-center rounded-md hover:bg-white/70 hover:text-red-500"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+                          <path d="M3 6h18" />
+                          <path d="M8 6V4h8v2" />
+                          <path d="M19 6l-1 14H6L5 6" />
+                        </svg>
+                      </span>
+                    )}
+                  </span>
                 </button>
               );
             })}

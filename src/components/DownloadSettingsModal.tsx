@@ -38,8 +38,8 @@ const Toggle = ({
     aria-pressed={checked}
   >
     <span
-      className={`absolute top-1 h-5 w-5 rounded-full bg-[#f7f2e9] shadow transition-transform duration-200 ${
-        checked ? 'translate-x-5' : 'translate-x-1'
+      className={`absolute top-1 h-5 w-5 rounded-full bg-[#f7f2e9] shadow transition-[left,box-shadow] duration-200 ${
+        checked ? 'left-[22px]' : 'left-[4px]'
       }`}
     />
   </button>

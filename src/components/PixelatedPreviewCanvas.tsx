@@ -42,7 +42,6 @@ interface PixelatedPreviewCanvasProps {
     phase?: CanvasInteractionPhase
   ) => void;
   highlightColorKey?: string | null;
-  onHighlightComplete?: () => void;
   panMode?: boolean;
   dragPaintMode?: boolean;
 }
@@ -136,7 +135,6 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
   canvasRef,
   onInteraction,
   highlightColorKey,
-  onHighlightComplete,
   panMode = false,
   dragPaintMode = false,
 }) => {
@@ -185,15 +183,10 @@ const PixelatedPreviewCanvas: React.FC<PixelatedPreviewCanvasProps> = ({
   useEffect(() => {
     if (highlightColorKey && mappedPixelData && gridDimensions) {
       setIsHighlighting(true);
-      // 0.3秒后结束高亮
-      const timer = setTimeout(() => {
-        setIsHighlighting(false);
-        onHighlightComplete?.();
-      }, 300);
-
-      return () => clearTimeout(timer);
+    } else {
+      setIsHighlighting(false);
     }
-  }, [highlightColorKey, mappedPixelData, gridDimensions, onHighlightComplete]);
+  }, [highlightColorKey, mappedPixelData, gridDimensions]);
 
   // --- 鼠标事件处理 ---
   

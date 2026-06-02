@@ -90,6 +90,23 @@ interface EditorLayer {
   locked: boolean;
 }
 
+type StickerShape = 'heart' | 'star' | 'circle' | 'diamond';
+type StickerStyle = 'solid' | 'hollow' | 'striped';
+
+interface StickerDraft {
+  shape: StickerShape;
+  style: StickerStyle;
+  color: string;
+  size: number;
+}
+
+interface StickerInstance extends StickerDraft {
+  id: string;
+  layerId: string;
+  x: number;
+  y: number;
+}
+
 interface PaintStrokeState {
   active: boolean;
   snapshotSaved: boolean;
@@ -195,8 +212,8 @@ const floatAnimation = `
   }
 
   @keyframes railSlideIn {
-    from { opacity: 0; transform: translate3d(-18px, -50%, 0) scale(0.96); }
-    to { opacity: 1; transform: translate3d(0, -50%, 0) scale(1); }
+    from { opacity: 0; margin-left: -18px; }
+    to { opacity: 1; margin-left: 0; }
   }
 
   @keyframes panelSlideIn {
@@ -507,6 +524,7 @@ const floatAnimation = `
 
   .preview-brand-strip {
     animation: brandStripIn 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    border-top: 1px solid rgba(var(--line-rgb),0.14);
   }
 
   .settings-panel-card {
@@ -993,6 +1011,54 @@ function ToggleRow({
   );
 }
 
+function StickerMark({
+  sticker,
+}: {
+  sticker: StickerInstance;
+}) {
+  const shapeClass = sticker.shape === 'circle'
+    ? 'rounded-full'
+    : sticker.shape === 'diamond'
+      ? 'rotate-45 rounded-sm'
+      : sticker.shape === 'star'
+        ? 'rounded-[4px]'
+        : 'rounded-[45%_45%_35%_35%]';
+  const size = Math.max(18, sticker.size * 8);
+  const style: React.CSSProperties = {
+    width: size,
+    height: size,
+    backgroundColor: sticker.style === 'hollow' ? 'transparent' : sticker.color,
+    borderColor: sticker.color,
+    backgroundImage: sticker.style === 'striped'
+      ? `repeating-linear-gradient(45deg, ${sticker.color} 0 5px, rgba(255,255,255,0.2) 5px 10px)`
+      : undefined,
+  };
+
+  if (sticker.shape === 'star') {
+    return (
+      <span
+        className="block text-center leading-none drop-shadow-sm"
+        style={{ color: sticker.color, fontSize: size }}
+      >
+        ★
+      </span>
+    );
+  }
+
+  if (sticker.shape === 'heart') {
+    return (
+      <span
+        className="block text-center leading-none drop-shadow-sm"
+        style={{ color: sticker.color, fontSize: size }}
+      >
+        ♥
+      </span>
+    );
+  }
+
+  return <span className={`block border-2 shadow-sm ${shapeClass}`} style={style} />;
+}
+
 function PreviewSidePanel({
   settings,
   onSettingsChange,
@@ -1241,6 +1307,15 @@ export default function Home() {
     { id: 'base', name: '主体', type: 'base', visible: true, locked: true },
   ]);
   const [activeLayerId, setActiveLayerId] = useState<string>('base');
+  const [isStickerPanelOpen, setIsStickerPanelOpen] = useState<boolean>(false);
+  const [stickerDraft, setStickerDraft] = useState<StickerDraft>({
+    shape: 'circle',
+    style: 'solid',
+    color: '#E67F5F',
+    size: 5,
+  });
+  const [stickers, setStickers] = useState<StickerInstance[]>([]);
+  const [draggingStickerId, setDraggingStickerId] = useState<string | null>(null);
   const [focusState, setFocusState] = useState<FocusWorkbenchState>({
     currentColor: '',
     selectedCell: null,
@@ -1534,7 +1609,6 @@ export default function Home() {
   const pixelatedCanvasRef = useRef<HTMLCanvasElement>(null);
   // ++ 添加: Ref for import file input ++
   const importPaletteInputRef = useRef<HTMLInputElement>(null);
-  const stickerInputRef = useRef<HTMLInputElement>(null);
   //const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   // ++ Re-add touch refs needed for tooltip logic ++
   //const touchStartPosRef = useRef<{ x: number; y: number; pageX: number; pageY: number } | null>(null);
@@ -1882,6 +1956,7 @@ export default function Home() {
   const resetEditorLayers = () => {
     setEditorLayers([{ id: 'base', name: '主体', type: 'base', visible: true, locked: true }]);
     setActiveLayerId('base');
+    setStickers([]);
   };
 
   const handleAddEditorLayer = () => {
@@ -1899,27 +1974,7 @@ export default function Home() {
   };
 
   const handleAddStickerRequest = () => {
-    stickerInputRef.current?.click();
-  };
-
-  const handleStickerFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const id = `sticker-${Date.now()}`;
-    const rawName = file.name.replace(/\.[^.]+$/, '').trim();
-    const newLayer: EditorLayer = {
-      id,
-      name: rawName ? `贴纸 · ${rawName}` : `贴纸 ${editorLayers.filter(layer => layer.type === 'sticker').length + 1}`,
-      type: 'sticker',
-      visible: true,
-      locked: false,
-    };
-    setEditorLayers(prev => [newLayer, ...prev]);
-    setActiveLayerId(id);
-    showToast('已添加贴纸图层');
-
-    event.target.value = '';
+    setIsStickerPanelOpen(true);
   };
 
   const handleLayerSelect = (id: string) => {
@@ -1930,6 +1985,133 @@ export default function Home() {
     setEditorLayers(prev => prev.map(layer => (
       layer.id === id ? { ...layer, visible: !layer.visible } : layer
     )));
+  };
+
+  const handleToggleLayerLock = (id: string) => {
+    setEditorLayers(prev => prev.map(layer => (
+      layer.id === id ? { ...layer, locked: !layer.locked } : layer
+    )));
+  };
+
+  const handleDuplicateLayer = (id: string) => {
+    const layer = editorLayers.find(item => item.id === id);
+    if (!layer) return;
+
+    const nextId = `${layer.type}-${Date.now()}`;
+    const duplicate: EditorLayer = {
+      ...layer,
+      id: nextId,
+      name: `${layer.name} 副本`,
+      locked: false,
+    };
+    setEditorLayers(prev => {
+      const index = prev.findIndex(item => item.id === id);
+      if (index < 0) return [duplicate, ...prev];
+      const next = [...prev];
+      next.splice(index, 0, duplicate);
+      return next;
+    });
+    if (layer.type === 'sticker') {
+      setStickers(prev => [
+        ...prev
+          .filter(sticker => sticker.layerId === id)
+          .map(sticker => ({
+            ...sticker,
+            id: `${nextId}-${Date.now()}`,
+            layerId: nextId,
+            x: Math.min(100, sticker.x + 4),
+            y: Math.min(100, sticker.y + 4),
+          })),
+        ...prev,
+      ]);
+    }
+    setActiveLayerId(nextId);
+    showToast('已复制图层');
+  };
+
+  const handleMoveLayer = (id: string, direction: 'up' | 'down') => {
+    setEditorLayers(prev => {
+      const index = prev.findIndex(layer => layer.id === id);
+      if (index < 0) return prev;
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
+  };
+
+  const handleDeleteLayer = (id: string) => {
+    const layer = editorLayers.find(item => item.id === id);
+    if (!layer || layer.type === 'base') return;
+
+    setEditorLayers(prev => prev.filter(item => item.id !== id));
+    setStickers(prev => prev.filter(sticker => sticker.layerId !== id));
+    if (activeLayerId === id) {
+      setActiveLayerId('base');
+    }
+    showToast('已删除图层');
+  };
+
+  const handleCreateStickerLayer = () => {
+    const id = `sticker-${Date.now()}`;
+    const newLayer: EditorLayer = {
+      id,
+      name: `贴纸 · ${stickerDraft.shape}`,
+      type: 'sticker',
+      visible: true,
+      locked: false,
+    };
+    setEditorLayers(prev => [newLayer, ...prev]);
+    setStickers(prev => [
+      {
+        ...stickerDraft,
+        id: `${id}-item`,
+        layerId: id,
+        x: 50,
+        y: 50,
+      },
+      ...prev,
+    ]);
+    setActiveLayerId(id);
+    setIsStickerPanelOpen(false);
+    showToast('已添加贴纸');
+  };
+
+  const getStickerLayer = (layerId: string) => editorLayers.find(layer => layer.id === layerId);
+
+  const handleStickerPointerDown = (event: React.PointerEvent<HTMLButtonElement>, stickerId: string) => {
+    const sticker = stickers.find(item => item.id === stickerId);
+    const layer = sticker ? getStickerLayer(sticker.layerId) : null;
+    if (!sticker || !layer || layer.locked || !layer.visible) return;
+
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDraggingStickerId(stickerId);
+    setActiveLayerId(sticker.layerId);
+  };
+
+  const handleStickerPointerMove = (event: React.PointerEvent<HTMLButtonElement>, stickerId: string) => {
+    if (draggingStickerId !== stickerId) return;
+
+    const board = event.currentTarget.parentElement;
+    if (!board) return;
+    const rect = board.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    setStickers(prev => prev.map(sticker => (
+      sticker.id === stickerId
+        ? { ...sticker, x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) }
+        : sticker
+    )));
+  };
+
+  const handleStickerPointerEnd = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (draggingStickerId) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setDraggingStickerId(null);
   };
 
   // 根据mappedPixelData生成合成的originalImageSrc
@@ -3521,11 +3703,6 @@ export default function Home() {
     setHighlightColorKey(colorHex);
   };
 
-  // 新增：高亮完成回调
-  const handleHighlightComplete = () => {
-    setHighlightColorKey(null);
-  };
-
   // 新增：切换完整色板显示
   const handleToggleFullPalette = () => {
     setShowFullPalette(!showFullPalette);
@@ -4137,13 +4314,6 @@ export default function Home() {
                   onChange={handleImportPaletteFile}
                   className="hidden"
                 />
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={stickerInputRef}
-                  onChange={handleStickerFileChange}
-                  className="hidden"
-                />
                 <canvas ref={originalCanvasRef} className="hidden" />
 
                 <div
@@ -4252,16 +4422,38 @@ export default function Home() {
                                 isManualColoringMode={isManualColoringMode}
                                 onInteraction={handleCanvasInteraction}
                                 highlightColorKey={highlightColorKey}
-                                onHighlightComplete={handleHighlightComplete}
                                 panMode={isManualColoringMode && activeEditorTool === 'pan'}
                                 dragPaintMode={isManualColoringMode && (activeEditorTool === 'brush' || activeEditorTool === 'eraser')}
                               />
                             </div>
                             {workspaceMode === 'preview' && previewSettings.brandText.trim() && (
-                              <div className="preview-brand-strip pointer-events-none relative z-10 mt-2 flex min-h-[44px] items-center justify-end rounded-lg border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.72)] px-4 py-2 text-xs font-semibold text-[var(--text)] backdrop-blur">
+                              <div className="preview-brand-strip pointer-events-none relative z-10 mt-2 flex min-h-[44px] items-center justify-end px-3 py-2 text-xs font-semibold text-[var(--text)]">
                                 {previewSettings.brandText}
                               </div>
                             )}
+                            {stickers.map(sticker => {
+                              const layer = editorLayers.find(item => item.id === sticker.layerId);
+                              if (!layer?.visible) return null;
+                              return (
+                                <button
+                                  key={sticker.id}
+                                  type="button"
+                                  onPointerDown={event => handleStickerPointerDown(event, sticker.id)}
+                                  onPointerMove={event => handleStickerPointerMove(event, sticker.id)}
+                                  onPointerUp={handleStickerPointerEnd}
+                                  onPointerCancel={handleStickerPointerEnd}
+                                  className={`absolute z-20 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl border border-transparent p-1 transition ${
+                                    layer.id === activeLayerId
+                                      ? 'border-[rgba(var(--accent-rgb),0.5)] bg-white/28 shadow-[0_10px_24px_rgba(var(--shadow-rgb),0.14)]'
+                                      : 'hover:border-[rgba(var(--line-rgb),0.22)] hover:bg-white/22'
+                                  } ${layer.locked ? 'cursor-not-allowed opacity-80' : 'cursor-move'}`}
+                                  style={{ left: `${sticker.x}%`, top: `${sticker.y}%`, touchAction: 'none' }}
+                                  title={layer.locked ? '图层已锁定' : '拖动贴纸'}
+                                >
+                                  <StickerMark sticker={sticker} />
+                                </button>
+                              );
+                            })}
                           </div>
                           {workspaceMode === 'edit' && showEditorMinimap && (
                             <EditorMinimap
@@ -4356,6 +4548,10 @@ export default function Home() {
                     onAddLayer={handleAddEditorLayer}
                     onLayerSelect={handleLayerSelect}
                     onToggleLayerVisible={handleToggleLayerVisible}
+                    onToggleLayerLock={handleToggleLayerLock}
+                    onDuplicateLayer={handleDuplicateLayer}
+                    onMoveLayer={handleMoveLayer}
+                    onDeleteLayer={handleDeleteLayer}
                   />
                 ) : workspaceMode === 'preview' ? (
                   <PreviewSidePanel
@@ -4593,6 +4789,111 @@ export default function Home() {
                 selectedColorSystem={selectedColorSystem}
                 onColorSystemChange={setSelectedColorSystem}
               />
+          </div>
+        </div>
+      )}
+
+      {isStickerPanelOpen && (
+        <div
+          className={`workspace-app theme-${appearanceSettings.theme} palette-backdrop fixed inset-0 z-[130] flex items-center justify-center bg-black/42 p-4 backdrop-blur-md`}
+          style={appearanceStyle}
+        >
+          <div className="palette-modal w-full max-w-[390px]">
+            <div className="settings-shell flex max-h-[88vh] flex-col overflow-hidden rounded-[22px]">
+              <div className="settings-head flex items-start justify-between gap-4 border-b border-[rgba(var(--line-rgb),0.18)] px-5 py-4">
+                <div>
+                  <div className="text-base font-semibold text-[var(--text)]">添加贴纸</div>
+                  <div className="mt-1 text-xs text-[var(--muted)]">选择形状、风格和大小后放到图纸上</div>
+                </div>
+                <button type="button" onClick={() => setIsStickerPanelOpen(false)} className="palette-icon-button" aria-label="关闭添加贴纸">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                    <path d="M18 6L6 18" />
+                    <path d="M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="space-y-5 overflow-y-auto px-5 py-5">
+                <div className="grid h-44 place-items-center rounded-xl border border-[rgba(var(--line-rgb),0.18)] bg-white/34">
+                  <StickerMark sticker={{ ...stickerDraft, id: 'preview', layerId: 'preview', x: 50, y: 50 }} />
+                </div>
+
+                <section>
+                  <div className="mb-2 text-sm font-semibold">形状</div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      ['heart', '爱心'],
+                      ['star', '星星'],
+                      ['circle', '圆形'],
+                      ['diamond', '菱形'],
+                    ].map(([shape, label]) => (
+                      <button
+                        key={shape}
+                        type="button"
+                        onClick={() => setStickerDraft(prev => ({ ...prev, shape: shape as StickerShape }))}
+                        className={`rounded-xl border px-2 py-3 text-xs transition ${stickerDraft.shape === shape ? 'border-[rgba(var(--accent-rgb),0.58)] bg-[rgba(var(--accent-rgb),0.14)] text-[var(--text)]' : 'border-[rgba(var(--line-rgb),0.16)] bg-white/42 text-[var(--muted)] hover:bg-white/66'}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <div className="mb-2 text-sm font-semibold">风格</div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      ['solid', '纯色'],
+                      ['hollow', '镂空'],
+                      ['striped', '条纹'],
+                    ].map(([style, label]) => (
+                      <button
+                        key={style}
+                        type="button"
+                        onClick={() => setStickerDraft(prev => ({ ...prev, style: style as StickerStyle }))}
+                        className={`rounded-xl border px-2 py-3 text-xs transition ${stickerDraft.style === style ? 'border-[rgba(var(--accent-rgb),0.58)] bg-[rgba(var(--accent-rgb),0.14)] text-[var(--text)]' : 'border-[rgba(var(--line-rgb),0.16)] bg-white/42 text-[var(--muted)] hover:bg-white/66'}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section>
+                  <div className="mb-2 text-sm font-semibold">颜色</div>
+                  <div className="flex flex-wrap gap-2">
+                    {['#E67F5F', '#F0A58D', '#F7C9B8', '#F5A7B8', '#F45DA9', '#9370DB', '#6495ED', '#51C5C2', '#49B7D0', '#2ECC71', '#F39C12', '#E74C3C', '#202020', '#777777', '#D8D8D8'].map(color => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setStickerDraft(prev => ({ ...prev, color }))}
+                        className={`h-8 w-8 rounded-full border transition ${stickerDraft.color === color ? 'border-white ring-2 ring-[rgba(var(--accent-rgb),0.62)]' : 'border-black/10 hover:scale-105'}`}
+                        style={{ backgroundColor: color }}
+                        aria-label={`选择贴纸颜色 ${color}`}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                <label className="grid gap-2 text-sm font-semibold">
+                  <span className="flex items-center justify-between">
+                    大小
+                    <span className="tabular-nums text-[var(--text)]">{stickerDraft.size}</span>
+                  </span>
+                  <input
+                    type="range"
+                    min="2"
+                    max="12"
+                    value={stickerDraft.size}
+                    onChange={event => setStickerDraft(prev => ({ ...prev, size: Number(event.target.value) }))}
+                    className="accent-[rgb(var(--accent-rgb))]"
+                  />
+                </label>
+              </div>
+              <div className="flex gap-2 border-t border-[rgba(var(--line-rgb),0.16)] px-5 py-4">
+                <button type="button" onClick={() => setIsStickerPanelOpen(false)} className="palette-footer-button flex-1">取消</button>
+                <button type="button" onClick={handleCreateStickerLayer} className="palette-save-button flex-1">添加贴纸</button>
+              </div>
+            </div>
           </div>
         </div>
       )}
