@@ -200,7 +200,8 @@ const SizeControl = ({
       max="12"
       value={value}
       onChange={event => onChange(clampSize(Number(event.target.value)))}
-      className="w-full accent-[rgb(var(--accent-rgb))]"
+      className="control-range w-full"
+      style={{ '--range-progress': `${((value - 1) / 11) * 100}%` } as React.CSSProperties}
     />
   </label>
 );

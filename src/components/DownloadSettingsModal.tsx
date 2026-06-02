@@ -134,7 +134,8 @@ const DownloadSettingsModal: React.FC<DownloadSettingsModalProps> = ({
                       step="1"
                       value={tempOptions.gridInterval}
                       onChange={event => handleOptionChange('gridInterval', Number(event.target.value))}
-                      className="w-full accent-[rgb(var(--accent-rgb))]"
+                      className="control-range w-full"
+                      style={{ '--range-progress': `${((tempOptions.gridInterval - 5) / 15) * 100}%` } as React.CSSProperties}
                     />
                   </label>
 

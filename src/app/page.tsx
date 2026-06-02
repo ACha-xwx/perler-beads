@@ -596,6 +596,7 @@ const floatAnimation = `
     position: relative;
     height: 28px;
     width: 48px;
+    flex: 0 0 48px;
     border-radius: 999px;
     border: 1px solid rgba(var(--line-rgb),0.26);
     background: rgba(255,255,255,0.35);
@@ -610,19 +611,82 @@ const floatAnimation = `
 
   .theme-toggle-knob {
     position: absolute;
-    top: 3px;
+    top: 50%;
     left: 4px;
     height: 20px;
     width: 20px;
     border-radius: 999px;
     background: rgba(255,255,255,0.95);
     box-shadow: 0 6px 14px rgba(var(--shadow-rgb),0.18);
+    transform: translateY(-50%);
     transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1), background 360ms ease;
   }
 
   .theme-toggle-on .theme-toggle-knob {
-    transform: translateX(19px);
+    transform: translate(19px, -50%);
     background: rgb(var(--accent-rgb));
+  }
+
+  .control-range {
+    --range-thumb-size: 16px;
+    --range-track-height: 6px;
+    width: 100%;
+    height: 24px;
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .control-range::-webkit-slider-runnable-track {
+    height: var(--range-track-height);
+    border-radius: 999px;
+    border: 1px solid rgba(var(--line-rgb),0.26);
+    background:
+      linear-gradient(90deg, rgb(var(--accent-rgb)), rgb(var(--accent-rgb))) 0/var(--range-progress, 0%) 100% no-repeat,
+      rgba(255,255,255,0.56);
+    box-shadow: inset 0 1px 2px rgba(var(--shadow-rgb),0.1);
+  }
+
+  .control-range::-webkit-slider-thumb {
+    width: var(--range-thumb-size);
+    height: var(--range-thumb-size);
+    margin-top: calc((var(--range-track-height) - var(--range-thumb-size)) / 2 - 1px);
+    appearance: none;
+    -webkit-appearance: none;
+    border-radius: 999px;
+    border: 2px solid rgb(var(--accent-rgb));
+    background: rgb(var(--accent-rgb));
+    box-shadow: 0 4px 12px rgba(var(--shadow-rgb),0.2), 0 0 0 4px rgba(var(--accent-rgb),0.1);
+    transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 260ms ease;
+  }
+
+  .control-range:hover::-webkit-slider-thumb {
+    transform: scale(1.08);
+    box-shadow: 0 6px 16px rgba(var(--shadow-rgb),0.24), 0 0 0 6px rgba(var(--accent-rgb),0.12);
+  }
+
+  .control-range::-moz-range-track {
+    height: var(--range-track-height);
+    border-radius: 999px;
+    border: 1px solid rgba(var(--line-rgb),0.26);
+    background: rgba(255,255,255,0.56);
+  }
+
+  .control-range::-moz-range-progress {
+    height: var(--range-track-height);
+    border-radius: 999px;
+    background: rgb(var(--accent-rgb));
+  }
+
+  .control-range::-moz-range-thumb {
+    width: var(--range-thumb-size);
+    height: var(--range-thumb-size);
+    border-radius: 999px;
+    border: 2px solid rgb(var(--accent-rgb));
+    background: rgb(var(--accent-rgb));
+    box-shadow: 0 4px 12px rgba(var(--shadow-rgb),0.2), 0 0 0 4px rgba(var(--accent-rgb),0.1);
   }
 
   .editor-color-swatch {
@@ -1043,10 +1107,10 @@ function ToggleRow({
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between rounded-xl border border-[rgba(var(--line-rgb),0.14)] bg-white/42 px-3 py-2.5 text-left transition hover:bg-white/66"
+      className="flex w-full items-center justify-between gap-3 rounded-xl border border-[rgba(var(--line-rgb),0.14)] bg-white/42 px-3 py-2.5 text-left transition hover:bg-white/66"
       aria-pressed={checked}
     >
-      <span>
+      <span className="min-w-0 flex-1">
         <span className="block text-xs font-semibold text-[var(--text)]">{label}</span>
         {helper && <span className="mt-0.5 block text-[11px] leading-4 text-[var(--muted)]">{helper}</span>}
       </span>
@@ -1127,7 +1191,8 @@ function CanvasScaleControl({
         step="0.05"
         value={scale}
         onChange={event => setScale(Number(event.target.value))}
-        className="w-28 accent-[rgb(var(--accent-rgb))]"
+        className="control-range w-28"
+        style={{ '--range-progress': `${((scale - 0.5) / 1.5) * 100}%` } as React.CSSProperties}
       />
       <button type="button" onClick={() => setScale(scale + 0.1)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/62" aria-label="放大画布">+</button>
       <button type="button" onClick={() => setScale(1)} className="min-w-12 rounded-lg px-2 py-1 font-mono text-[11px] tabular-nums hover:bg-white/62">{Math.round(scale * 100)}%</button>
@@ -1168,12 +1233,12 @@ function PreviewSidePanel({
     <aside className="editor-side-panel flex h-full w-full flex-col overflow-hidden rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.84)] text-[var(--text)] shadow-[-18px_0_48px_rgba(var(--shadow-rgb),0.12)] backdrop-blur-2xl">
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
         <section className="preview-panel-card">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <div className="text-sm font-bold">熨烫预览</div>
               <div className="mt-1 text-[11px] leading-4 text-[var(--muted)]">预览拼豆熨烫后的真实效果，可调整材质、阴影和边缘效果。</div>
             </div>
-            <button type="button" onClick={onDownload} className="glass-action min-h-[36px] px-3 text-xs font-medium">下载</button>
+            <button type="button" onClick={onDownload} className="glass-action min-h-[36px] shrink-0 whitespace-nowrap px-3 text-xs font-medium">下载</button>
           </div>
         </section>
 
@@ -1207,7 +1272,15 @@ function PreviewSidePanel({
                 <span>弧度</span>
                 <span className="tabular-nums">{settings.edgeIntensity}%</span>
               </span>
-              <input type="range" min="0" max="100" value={settings.edgeIntensity} onChange={event => setValue('edgeIntensity', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={settings.edgeIntensity}
+                onChange={event => setValue('edgeIntensity', Number(event.target.value))}
+                className="control-range"
+                style={{ '--range-progress': `${settings.edgeIntensity}%` } as React.CSSProperties}
+              />
             </label>
           </div>
         </section>
@@ -1226,14 +1299,30 @@ function PreviewSidePanel({
                 <span>角度</span>
                 <span className="tabular-nums">{settings.shadowAngle}°</span>
               </span>
-              <input type="range" min="0" max="360" value={settings.shadowAngle} onChange={event => setValue('shadowAngle', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
+              <input
+                type="range"
+                min="0"
+                max="360"
+                value={settings.shadowAngle}
+                onChange={event => setValue('shadowAngle', Number(event.target.value))}
+                className="control-range"
+                style={{ '--range-progress': `${(settings.shadowAngle / 360) * 100}%` } as React.CSSProperties}
+              />
             </label>
             <label className="grid gap-1 text-[11px] text-[var(--muted)]">
               <span className="flex items-center justify-between">
                 <span>距离</span>
                 <span className="tabular-nums">{settings.shadowDistance}px</span>
               </span>
-              <input type="range" min="0" max="28" value={settings.shadowDistance} onChange={event => setValue('shadowDistance', Number(event.target.value))} className="accent-[rgb(var(--accent-rgb))]" />
+              <input
+                type="range"
+                min="0"
+                max="28"
+                value={settings.shadowDistance}
+                onChange={event => setValue('shadowDistance', Number(event.target.value))}
+                className="control-range"
+                style={{ '--range-progress': `${(settings.shadowDistance / 28) * 100}%` } as React.CSSProperties}
+              />
             </label>
           </div>
         </section>
@@ -3810,7 +3899,9 @@ export default function Home() {
 
   // 新增：处理颜色高亮
   const handleHighlightColor = (colorHex: string) => {
-    setHighlightColorKey(colorHex);
+    setHighlightColorKey(prev => (
+      prev && prev.toUpperCase() === colorHex.toUpperCase() ? null : colorHex
+    ));
   };
 
   // 新增：切换完整色板显示
