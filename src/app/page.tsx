@@ -989,6 +989,27 @@ const floatAnimation = `
     animation: toolbarSlideUp 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
+  .mobile-command-bar > div {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .mobile-command-bar > div::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-panel-scrim {
+    animation: paletteBackdropIn 260ms ease-out both;
+  }
+
+  .mobile-panel-handle {
+    display: none;
+    border: 0;
+    padding: 0;
+    appearance: none;
+    color: inherit;
+  }
+
   .mobile-command-bar button,
   .mobile-command-bar label,
   .mode-tab,
@@ -1012,10 +1033,12 @@ const floatAnimation = `
       height: min(44vh, 430px);
       min-height: 280px;
       flex: 0 0 auto;
+      opacity: 1;
+      pointer-events: auto;
     }
 
     .workspace-side-panel-shell .editor-side-panel {
-      animation-name: panelRiseIn;
+      animation: none;
       border-radius: 18px;
       box-shadow: 0 -18px 48px rgba(var(--shadow-rgb),0.12);
     }
@@ -1030,7 +1053,7 @@ const floatAnimation = `
 
     .editor-tool-rail {
       left: 0.5rem;
-      max-height: calc(100% - 5.75rem);
+      max-height: calc(100% - 4.75rem);
       gap: 2px;
       border-radius: 14px;
       padding: 4px;
@@ -1065,6 +1088,25 @@ const floatAnimation = `
   }
 
   @media (max-width: 767px) {
+    .workspace-brand-button {
+      display: none;
+    }
+
+    .workspace-app {
+      min-width: 320px;
+    }
+
+    .workspace-app button,
+    .workspace-app label,
+    .workspace-app select,
+    .workspace-app input {
+      touch-action: manipulation;
+    }
+
+    .workspace-enter {
+      border-radius: 16px;
+    }
+
     .mode-switch {
       max-width: 100%;
       overflow-x: auto;
@@ -1080,12 +1122,127 @@ const floatAnimation = `
     }
 
     .mobile-canvas-column {
-      min-height: min(58vh, 560px);
+      min-height: 0;
     }
 
     .workspace-side-panel-shell {
-      height: min(48vh, 460px);
-      min-height: 300px;
+      position: fixed;
+      left: 0.5rem;
+      right: 0.5rem;
+      bottom: calc(4.55rem + env(safe-area-inset-bottom));
+      z-index: 70;
+      height: min(56vh, 480px);
+      min-height: 310px;
+      max-height: calc(100dvh - 6rem - env(safe-area-inset-bottom));
+      transform: translateY(calc(100% + 5.75rem));
+      opacity: 0;
+      pointer-events: none;
+      transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1), opacity 280ms ease;
+    }
+
+    .workspace-side-panel-shell[data-mode="focus"] {
+      bottom: calc(0.75rem + env(safe-area-inset-bottom));
+      height: min(48vh, 410px);
+      min-height: 260px;
+      max-height: calc(100dvh - 2rem - env(safe-area-inset-bottom));
+      transform: translateY(calc(100% + 1.75rem));
+    }
+
+    .workspace-side-panel-shell.mobile-panel-open {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .mobile-panel-handle {
+      display: flex;
+      height: 18px;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      border-radius: 18px 18px 0 0;
+      background: rgba(var(--panel-rgb),0.84);
+    }
+
+    .mobile-panel-handle::before {
+      content: "";
+      height: 4px;
+      width: 42px;
+      border-radius: 999px;
+      background: rgba(var(--line-rgb),0.46);
+    }
+
+    .workspace-side-panel-shell .editor-side-panel {
+      height: calc(100% - 18px);
+      min-height: 0;
+      border-radius: 0 0 18px 18px;
+    }
+
+    .mobile-stage-scroll {
+      padding: 8px;
+      overscroll-behavior: contain;
+    }
+
+    .mobile-stage-topbar {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .mobile-stage-topbar > div:first-child {
+      min-width: 0;
+    }
+
+    .mobile-upload-card {
+      width: calc(100% - 16px);
+      max-width: calc(100vw - 48px);
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    .mobile-upload-card .mobile-upload-helper {
+      max-width: 30ch;
+    }
+
+    .preview-board {
+      max-width: calc(100vw - 16px);
+    }
+
+    .preview-board.preview-board-pretty {
+      padding: 14px 14px 12px;
+    }
+
+    .preview-signature-zone {
+      margin-top: 8px;
+      min-height: 22px;
+      padding-left: 8px;
+      padding-right: 8px;
+      font-size: 11px;
+    }
+
+    .canvas-scale-control {
+      bottom: 0.5rem;
+      left: 0.5rem;
+      right: 0.5rem;
+      transform: none;
+      gap: 4px;
+      max-width: none;
+      justify-content: center;
+      padding: 6px;
+    }
+
+    .canvas-scale-control button {
+      height: 30px;
+      width: 30px;
+      min-width: 30px;
+    }
+
+    .canvas-scale-control .canvas-scale-value {
+      min-width: 44px;
+      width: auto;
+    }
+
+    .canvas-scale-control .control-range {
+      width: min(33vw, 104px);
     }
 
     .focus-bottom-palette {
@@ -1093,14 +1250,130 @@ const floatAnimation = `
       padding-right: 8px;
     }
 
+    .focus-bottom-palette > div:first-child {
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+    }
+
+    .focus-bottom-palette > div:first-child::-webkit-scrollbar {
+      display: none;
+    }
+
     .focus-color-chip {
       min-width: 68px;
       padding-left: 6px;
       padding-right: 6px;
+      scroll-snap-align: start;
+    }
+
+    .focus-canvas-pad {
+      padding: 8px;
+    }
+
+    .focus-status-bar .mx-auto,
+    .focus-progress-bar .mx-auto {
+      gap: 8px;
+    }
+
+    .focus-status-bar .flex-wrap {
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+
+    .focus-current-bead {
+      height: 2rem;
+      width: 2rem;
+    }
+
+    .focus-toolbar .glass-action {
+      min-width: 0;
+      min-height: 44px;
+      padding-left: 6px;
+      padding-right: 6px;
+    }
+
+    .focus-toolbar .glass-action span {
+      white-space: nowrap;
+    }
+
+    .focus-status-bar {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .focus-timer-button {
+      min-width: 42px;
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .focus-timer-button span {
+      display: none;
+    }
+
+    .focus-progress-bar {
+      padding-left: 10px;
+      padding-right: 10px;
+    }
+
+    .focus-progress-bar .focus-progress-dot {
+      height: 7px;
+      width: 7px;
+    }
+
+    .focus-progress-bar .shrink-0 {
+      display: none;
+    }
+
+    .install-pwa-button {
+      right: 0.75rem;
+      bottom: calc(4.9rem + env(safe-area-inset-bottom));
+      min-height: 40px;
+      padding: 9px 12px;
+      font-size: 12px;
+    }
+
+    .mobile-command-bar {
+      bottom: calc(0.5rem + env(safe-area-inset-bottom));
+      border-radius: 16px;
+    }
+
+    .mobile-command-bar > div {
+      gap: 6px;
+      padding: 6px;
+    }
+
+    .mobile-command-bar button,
+    .mobile-command-bar label {
+      min-width: 56px;
+      min-height: 40px;
+      justify-content: center;
+      padding-left: 12px;
+      padding-right: 12px;
+      scroll-snap-align: start;
+    }
+
+    .palette-backdrop {
+      align-items: flex-end;
+      padding: 8px;
     }
 
     .palette-modal {
       max-width: 100%;
+      max-height: calc(100dvh - 16px);
+    }
+
+    .palette-modal .settings-shell {
+      border-radius: 18px 18px 0 0;
+    }
+
+    .settings-shell {
+      max-width: calc(100vw - 16px);
+    }
+
+    .settings-head > div:first-child,
+    .palette-lab-head > div:first-child {
+      min-width: 0;
     }
 
     .custom-palette-editor {
@@ -1121,6 +1394,16 @@ const floatAnimation = `
       grid-template-columns: minmax(0,1fr);
       gap: 10px;
       padding-bottom: 12px;
+    }
+
+    .custom-palette-toolbar > div:first-child {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .custom-palette-toolbar > div:first-child::-webkit-scrollbar {
+      display: none;
     }
 
     .custom-palette-series {
@@ -1159,10 +1442,18 @@ const floatAnimation = `
 
     .palette-footer > div {
       width: 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .palette-footer > div::-webkit-scrollbar {
+      display: none;
     }
 
     .palette-footer-button,
     .palette-save-button {
+      flex: 0 0 auto;
       min-height: 42px;
       white-space: nowrap;
     }
@@ -1179,6 +1470,23 @@ const floatAnimation = `
     .download-option-row {
       align-items: center;
       gap: 10px;
+    }
+
+    .download-option-row > div:first-child {
+      min-width: 0;
+    }
+
+    .download-option-row .theme-toggle,
+    .download-option-row button[aria-pressed] {
+      flex-shrink: 0;
+    }
+
+    .editor-panel-card button,
+    .preview-panel-card button,
+    .focus-side-card button,
+    .download-panel-card button,
+    .settings-panel-card button {
+      white-space: nowrap;
     }
   }
 
@@ -1400,7 +1708,7 @@ function CanvasScaleControl({
         style={{ '--range-progress': `${((scale - 0.5) / 1.5) * 100}%` } as React.CSSProperties}
       />
       <button type="button" onClick={() => setScale(scale + 0.1)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/62" aria-label="放大画布">+</button>
-      <button type="button" onClick={() => setScale(1)} className="min-w-12 rounded-lg px-2 py-1 font-mono text-[11px] tabular-nums hover:bg-white/62">{Math.round(scale * 100)}%</button>
+      <button type="button" onClick={() => setScale(1)} className="canvas-scale-value min-w-12 rounded-lg px-2 py-1 font-mono text-[11px] tabular-nums hover:bg-white/62">{Math.round(scale * 100)}%</button>
     </div>
   );
 }
@@ -1686,6 +1994,7 @@ export default function Home() {
   const [isAppearancePanelOpen, setIsAppearancePanelOpen] = useState<boolean>(false);
   const [appearanceSettings, setAppearanceSettings] = useState<AppearanceSettings>(defaultAppearanceSettings);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('optimize');
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState<boolean>(false);
   const intendedWorkspaceModeRef = useRef<WorkspaceMode>('optimize');
   const [activeEditorTool, setActiveEditorTool] = useState<EditorTool>('brush');
   const [showEditorMinimap, setShowEditorMinimap] = useState<boolean>(true);
@@ -1715,6 +2024,7 @@ export default function Home() {
     brandText: '',
   });
   const [workspaceCanvasScale, setWorkspaceCanvasScale] = useState<number>(1);
+  const [workspaceCanvasScaleTouched, setWorkspaceCanvasScaleTouched] = useState<boolean>(false);
   const [editorLayers, setEditorLayers] = useState<EditorLayer[]>([
     { id: 'base', name: '主体', type: 'base', visible: true, locked: true },
   ]);
@@ -1814,6 +2124,31 @@ export default function Home() {
     setTimeout(() => setToastMessage(null), 2000);
   }, []);
 
+  const handleWorkspaceCanvasScaleChange = useCallback((value: number) => {
+    setWorkspaceCanvasScaleTouched(true);
+    setWorkspaceCanvasScale(value);
+  }, []);
+
+  const openCustomPaletteEditor = useCallback(() => {
+    setIsMobilePanelOpen(false);
+    setIsCustomPaletteEditorOpen(true);
+  }, []);
+
+  const openDownloadSettings = useCallback(() => {
+    setIsMobilePanelOpen(false);
+    setIsDownloadSettingsOpen(true);
+  }, []);
+
+  const toggleAppearancePanel = useCallback(() => {
+    setIsMobilePanelOpen(false);
+    setIsAppearancePanelOpen(prev => !prev);
+  }, []);
+
+  const openFocusColorPanel = useCallback(() => {
+    setIsMobilePanelOpen(false);
+    setFocusState(prev => ({ ...prev, showColorPanel: true }));
+  }, []);
+
   const selectedTheme = appearanceThemes.find(theme => theme.key === appearanceSettings.theme) || appearanceThemes[0];
   const selectedFont = appearanceFonts.find(font => font.key === appearanceSettings.font) || appearanceFonts[0];
   const appearanceStyle = {
@@ -1848,6 +2183,32 @@ export default function Home() {
     });
   }, [isManualColoringMode, mappedPixelData]);
 
+  useEffect(() => {
+    if (!gridDimensions || workspaceCanvasScaleTouched || typeof window === 'undefined') return;
+
+    const fitCanvasToPhone = () => {
+      const isPhone = window.matchMedia('(max-width: 767px)').matches;
+      if (!isPhone) return;
+
+      let baseWidth = 500;
+      if (gridDimensions.N > 100) {
+        const requiredWidthForMinSize = gridDimensions.N * 4;
+        const requiredWidthForRecommendedSize = gridDimensions.N * 6;
+        const maxWidth = Math.min(1200, window.innerWidth * 0.9);
+        baseWidth = Math.min(maxWidth, Math.max(500, requiredWidthForRecommendedSize));
+        baseWidth = Math.max(baseWidth, requiredWidthForMinSize);
+      }
+
+      const availableWidth = Math.max(280, window.innerWidth - (workspaceMode === 'preview' ? 44 : 24));
+      const fittedScale = Math.max(0.5, Math.min(1, Number((availableWidth / baseWidth).toFixed(2))));
+      setWorkspaceCanvasScale(fittedScale);
+    };
+
+    fitCanvasToPhone();
+    window.addEventListener('resize', fitCanvasToPhone);
+    return () => window.removeEventListener('resize', fitCanvasToPhone);
+  }, [gridDimensions, workspaceMode, workspaceCanvasScaleTouched]);
+
   const resetPendingEditorGestures = useCallback(() => {
     setPendingLineStart(null);
     setPendingRectangleStart(null);
@@ -1855,6 +2216,8 @@ export default function Home() {
   }, []);
 
   const handleWorkspaceModeChange = (mode: WorkspaceMode) => {
+    setIsMobilePanelOpen(false);
+
     if (mode === 'edit') {
       if (!mappedPixelData || !gridDimensions) return;
       intendedWorkspaceModeRef.current = mode;
@@ -2224,6 +2587,7 @@ export default function Home() {
         isCustomPalette,
       }));
       showToast('草稿已保存到本机');
+      setIsMobilePanelOpen(false);
     } catch (error) {
       console.error('保存草稿失败:', error);
       showToast('保存失败，浏览器存储空间可能不足');
@@ -2259,6 +2623,8 @@ export default function Home() {
       setIsEraseMode(false);
       setWorkspaceMode('preview');
       intendedWorkspaceModeRef.current = 'preview';
+      setWorkspaceCanvasScaleTouched(false);
+      setIsMobilePanelOpen(false);
       resetPendingEditorGestures();
       clearEditHistory();
       showToast('已恢复本机草稿');
@@ -2615,6 +2981,8 @@ export default function Home() {
           resetEditorLayers();
           setWorkspaceMode('preview');
           intendedWorkspaceModeRef.current = 'preview';
+          setWorkspaceCanvasScaleTouched(false);
+          setIsMobilePanelOpen(false);
           resetPendingEditorGestures();
           
           // 设置格子数量为导入的尺寸，避免重新映射时尺寸被修改
@@ -2638,9 +3006,11 @@ export default function Home() {
         setInitialGridColorKeys(new Set()); // ++ 重置初始键 ++
         resetEditorLayers();
         // ++ 重置横轴格子数量为默认值 ++
-        const defaultGranularity = 100;
+        const defaultGranularity = DEFAULT_GRANULARITY;
         setGranularity(defaultGranularity);
         setGranularityInput(defaultGranularity.toString());
+        setWorkspaceCanvasScaleTouched(false);
+        setIsMobilePanelOpen(false);
         setRemapTrigger(prev => prev + 1); // Trigger full remap for new image
       };
 
@@ -4607,7 +4977,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => handleWorkspaceModeChange('optimize')}
-              className="glass-action flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center gap-2 rounded-xl px-2 text-left"
+              className="workspace-brand-button glass-action flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center gap-2 rounded-xl px-2 text-left"
               title="回到优化模式"
             >
               <BeadLogo compact />
@@ -4648,7 +5018,7 @@ export default function Home() {
                 type="button"
                 onClick={handleUndoEdit}
                 disabled={editHistory.length === 0}
-                className="glass-action grid min-h-[44px] min-w-[44px] place-items-center disabled:cursor-not-allowed disabled:opacity-35"
+                className="glass-action hidden min-h-[44px] min-w-[44px] place-items-center disabled:cursor-not-allowed disabled:opacity-35 md:grid"
                 title="撤销上一步"
                 aria-label="撤销上一步"
               >
@@ -4662,7 +5032,7 @@ export default function Home() {
                 type="button"
                 onClick={handleRedoEdit}
                 disabled={redoHistory.length === 0}
-                className="glass-action grid min-h-[44px] min-w-[44px] place-items-center disabled:cursor-not-allowed disabled:opacity-35"
+                className="glass-action hidden min-h-[44px] min-w-[44px] place-items-center disabled:cursor-not-allowed disabled:opacity-35 md:grid"
                 title="恢复上一步"
                 aria-label="恢复上一步"
               >
@@ -4674,7 +5044,7 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={() => setIsCustomPaletteEditorOpen(true)}
+                onClick={openCustomPaletteEditor}
                 className="glass-action palette-status-button hidden min-h-[44px] flex-col items-center justify-center px-3 text-center leading-tight md:flex"
                 title={`色板设置 · ${selectedColorSystem} · ${selectedColorCount} 色`}
               >
@@ -4694,7 +5064,7 @@ export default function Home() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setIsDownloadSettingsOpen(true)}
+                  onClick={openDownloadSettings}
                   disabled={!mappedPixelData || !gridDimensions || activeBeadPalette.length === 0}
                   className="glass-action min-h-[44px] px-3 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-45"
                 >
@@ -4703,7 +5073,7 @@ export default function Home() {
                 <button type="button" onClick={handleSaveDraft} className="glass-action min-h-[44px] px-3 text-xs font-medium">保存</button>
                 <button
                   type="button"
-                  onClick={() => setIsAppearancePanelOpen(prev => !prev)}
+                  onClick={toggleAppearancePanel}
                   className="glass-action grid min-h-[44px] min-w-[44px] place-items-center"
                   title="设置"
                   aria-label="打开设置"
@@ -4717,7 +5087,7 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={() => setIsAppearancePanelOpen(prev => !prev)}
+                onClick={toggleAppearancePanel}
                 className="glass-action grid min-h-[44px] min-w-[44px] place-items-center md:hidden"
                 aria-label="打开设置"
               >
@@ -4731,7 +5101,7 @@ export default function Home() {
         </header>
 
         <div className="mobile-workspace-shell relative flex min-h-0 flex-1 lg:overflow-hidden">
-          <div className="mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1 flex-col gap-3 px-2 py-3 pb-24 sm:px-4 lg:flex-row lg:pb-3">
+          <div className={`mx-auto flex min-h-0 w-full max-w-screen-2xl flex-1 flex-col gap-3 px-2 py-2 sm:px-4 lg:flex-row lg:py-3 lg:pb-3 ${workspaceMode === 'focus' ? 'pb-2' : 'pb-20'}`}>
             <div className="mobile-canvas-column flex min-h-0 min-w-0 flex-1">
               <main ref={mainRef} className="relative flex min-h-0 min-w-0 flex-1 flex-col">
                 <input
@@ -4751,7 +5121,7 @@ export default function Home() {
                 >
                   {mappedPixelData && gridDimensions ? (
                     <div className="relative z-10 flex h-full w-full flex-col">
-                      <div className="flex items-center justify-between gap-3 border-b border-[rgba(var(--line-rgb),0.16)] bg-white/32 px-3 py-2 text-xs text-[var(--muted)] backdrop-blur sm:px-4">
+                      <div className="mobile-stage-topbar flex items-center justify-between gap-3 border-b border-[rgba(var(--line-rgb),0.16)] bg-white/32 px-3 py-2 text-xs text-[var(--muted)] backdrop-blur sm:px-4">
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="h-2 w-2 rounded-full bg-[rgba(var(--accent-rgb),0.78)] shadow-[0_0_18px_rgba(var(--accent-rgb),0.42)]" />
                           <span className="truncate">{
@@ -4781,7 +5151,7 @@ export default function Home() {
                             isPaused={focusState.isPaused}
                             onPauseToggle={handleFocusPauseToggle}
                           />
-                          <div className="min-h-0 flex-1 p-3">
+                          <div className="focus-canvas-pad min-h-0 flex-1 p-3">
                             <FocusCanvas
                               mappedPixelData={mappedPixelData}
                               gridDimensions={gridDimensions}
@@ -4827,20 +5197,28 @@ export default function Home() {
                               })}
                             </div>
                             <ToolBar
-                              onColorSelect={() => setFocusState(prev => ({ ...prev, showColorPanel: true }))}
+                              onColorSelect={openFocusColorPanel}
                               onLocate={handleFocusLocateRecommended}
                               onPause={handleFocusPauseToggle}
                               isPaused={focusState.isPaused}
                               elapsedTime={formatFocusTime(focusState.totalElapsedTime)}
                             />
+                            <button
+                              type="button"
+                              onClick={() => setIsMobilePanelOpen(prev => !prev)}
+                              className={`glass-action mt-2 min-h-[42px] w-full px-3 text-xs font-medium md:hidden ${isMobilePanelOpen ? 'glass-action-active' : ''}`}
+                              aria-expanded={isMobilePanelOpen}
+                            >
+                              {isMobilePanelOpen ? '收起拼豆设置' : '拼豆设置'}
+                            </button>
                           </div>
                         </div>
                       ) : (
-                        <div className={`relative flex min-h-0 flex-1 items-start justify-start overflow-auto p-3 sm:p-5 ${workspaceMode === 'preview' ? 'preview-stage' : 'editor-stage'}`}>
+                        <div className={`mobile-stage-scroll relative flex min-h-0 flex-1 items-start justify-start overflow-auto p-3 sm:p-5 ${workspaceMode === 'preview' ? 'preview-stage' : 'editor-stage'}`}>
                           <div
                             className={`preview-board relative m-auto overflow-hidden border border-[rgba(var(--line-rgb),0.2)] shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)] ${
                               workspaceMode === 'preview'
-                                ? `preview-material-${previewSettings.material} rounded-[22px] px-5 pb-4 pt-5 sm:px-7 sm:pb-5 sm:pt-7`
+                                ? `preview-board-pretty preview-material-${previewSettings.material} rounded-[22px] px-5 pb-4 pt-5 sm:px-7 sm:pb-5 sm:pt-7`
                                 : 'rounded-xl p-2'
                             }`}
                             style={workspaceMode === 'preview' ? previewBoardStyle : { background: 'rgba(255,255,255,0.7)' }}
@@ -4897,7 +5275,7 @@ export default function Home() {
                             </div>
                           </div>
                           {(workspaceMode === 'preview' || workspaceMode === 'optimize') && (
-                            <CanvasScaleControl scale={workspaceCanvasScale} onChange={setWorkspaceCanvasScale} />
+                            <CanvasScaleControl scale={workspaceCanvasScale} onChange={handleWorkspaceCanvasScaleChange} />
                           )}
                           {workspaceMode === 'edit' && showEditorMinimap && (
                             <EditorMinimap
@@ -4911,7 +5289,7 @@ export default function Home() {
                       )}
                     </div>
                   ) : (
-                    <label className="relative z-10 m-auto flex max-w-sm cursor-pointer flex-col items-center gap-4 overflow-hidden rounded-2xl border border-dashed border-[rgba(var(--line-rgb),0.32)] bg-white/52 px-8 py-10 text-center transition hover:border-[rgba(var(--accent-rgb),0.45)] hover:bg-white/70">
+                    <label className="mobile-upload-card relative z-10 m-auto flex max-w-sm cursor-pointer flex-col items-center gap-4 overflow-hidden rounded-2xl border border-dashed border-[rgba(var(--line-rgb),0.32)] bg-white/52 px-8 py-10 text-center transition hover:border-[rgba(var(--accent-rgb),0.45)] hover:bg-white/70">
                       <input
                         type="file"
                         accept={IMPORT_FILE_ACCEPT}
@@ -4920,7 +5298,7 @@ export default function Home() {
                       />
                       <BeadLogo />
                       <span className="text-lg font-semibold text-[var(--text)]">导入图片或 CSV</span>
-                      <span className="text-sm leading-6 text-[var(--muted)]">拖到这里也可以。生成后可编辑、去背景、保存草稿和导出采购清单。</span>
+                      <span className="mobile-upload-helper text-sm leading-6 text-[var(--muted)]">拖到这里也可以。生成后可编辑、去背景、保存草稿和导出采购清单。</span>
                       <span className="glass-action glass-action-primary px-5 py-2 text-sm font-medium">选择文件</span>
                     </label>
                   )}
@@ -4945,7 +5323,16 @@ export default function Home() {
             </div>
 
             {mappedPixelData && gridDimensions && (
-              <div className="workspace-side-panel-shell flex min-h-0 w-full flex-shrink-0 lg:w-[320px]">
+              <div
+                className={`workspace-side-panel-shell flex min-h-0 w-full flex-shrink-0 flex-col lg:w-[320px] ${isMobilePanelOpen ? 'mobile-panel-open' : ''}`}
+                data-mode={workspaceMode}
+              >
+                <button
+                  type="button"
+                  className="mobile-panel-handle"
+                  onClick={() => setIsMobilePanelOpen(false)}
+                  aria-label="收起面板"
+                />
                 {workspaceMode === 'edit' ? (
                   <EditorSidePanel
                     activeTool={activeEditorTool}
@@ -5001,7 +5388,7 @@ export default function Home() {
                   <PreviewSidePanel
                     settings={previewSettings}
                     onSettingsChange={setPreviewSettings}
-                    onDownload={() => setIsDownloadSettingsOpen(true)}
+                    onDownload={openDownloadSettings}
                   />
                 ) : workspaceMode === 'focus' ? (
                   <FocusSidePanel
@@ -5036,15 +5423,25 @@ export default function Home() {
           </div>
         </div>
 
-        <footer className="w-full border-t border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.62)] backdrop-blur-xl">
+        <footer className="hidden w-full border-t border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.62)] backdrop-blur-xl md:block">
           <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between px-4 py-2.5 text-xs text-[var(--muted)]">
             <span>{APP_NAME} · {APP_TAGLINE} · 2026</span>
             <span className="hidden sm:inline">{gridDimensions ? `网格 ${gridDimensions.N} x ${gridDimensions.M}` : `${selectedColorSystem} ${selectedColorCount}`}</span>
           </div>
         </footer>
 
-        <nav className="mobile-command-bar fixed bottom-2 left-2 right-2 z-50 rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.82)] shadow-[0_18px_48px_rgba(var(--shadow-rgb),0.18)] backdrop-blur-2xl md:hidden" aria-label="手机快捷操作">
+        <nav className={`mobile-command-bar fixed bottom-2 left-2 right-2 rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.82)] shadow-[0_18px_48px_rgba(var(--shadow-rgb),0.18)] backdrop-blur-2xl md:hidden ${workspaceMode === 'focus' ? 'hidden' : ''} ${isMobilePanelOpen ? 'z-[80]' : 'z-50'}`} aria-label="手机快捷操作">
           <div className="flex gap-2 overflow-x-auto p-2">
+            {mappedPixelData && gridDimensions && (
+              <button
+                type="button"
+                onClick={() => setIsMobilePanelOpen(prev => !prev)}
+                className={`glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium ${isMobilePanelOpen ? 'glass-action-active' : ''}`}
+                aria-expanded={isMobilePanelOpen}
+              >
+                {isMobilePanelOpen ? '收起' : '面板'}
+              </button>
+            )}
             <label className="glass-action relative flex min-h-[42px] flex-[0_0_auto] cursor-pointer items-center justify-center overflow-hidden px-4 text-xs font-medium">
               <input
                 type="file"
@@ -5056,35 +5453,68 @@ export default function Home() {
             </label>
             <button
               type="button"
-              onClick={() => setIsCustomPaletteEditorOpen(true)}
+              onClick={openCustomPaletteEditor}
               className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
             >
               色板
             </button>
-            <button
-              type="button"
-              onClick={() => setIsDownloadSettingsOpen(true)}
-              disabled={!mappedPixelData || !gridDimensions || activeBeadPalette.length === 0}
-              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              下载
-            </button>
-            <button
-              type="button"
-              onClick={handleSaveDraft}
-              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
-            >
-              保存
-            </button>
+            {mappedPixelData && gridDimensions && (
+              <button
+                type="button"
+                onClick={openDownloadSettings}
+                disabled={activeBeadPalette.length === 0}
+                className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                下载
+              </button>
+            )}
+            {workspaceMode === 'edit' && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleUndoEdit}
+                  disabled={editHistory.length === 0}
+                  className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  撤销
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRedoEdit}
+                  disabled={redoHistory.length === 0}
+                  className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  恢复
+                </button>
+              </>
+            )}
+            {mappedPixelData && gridDimensions && (
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
+              >
+                保存
+              </button>
+            )}
             <button
               type="button"
               onClick={handleRestoreDraft}
               className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
             >
-              恢复
+              草稿
             </button>
           </div>
         </nav>
+
+        {isMobilePanelOpen && mappedPixelData && gridDimensions && (
+          <button
+            type="button"
+            className="mobile-panel-scrim fixed inset-0 z-[60] bg-black/18 md:hidden"
+            onClick={() => setIsMobilePanelOpen(false)}
+            aria-label="关闭面板"
+          />
+        )}
       </div>
 
       {isAppearancePanelOpen && (
@@ -5180,7 +5610,7 @@ export default function Home() {
                       <button type="button" onClick={handleSaveDraft} className="glass-action min-h-[40px] px-3 text-xs font-medium">保存草稿</button>
                       <button type="button" onClick={handleRestoreDraft} className="glass-action min-h-[40px] px-3 text-xs font-medium">恢复草稿</button>
                       <button type="button" onClick={handleCopyShoppingList} disabled={!colorCounts} className="glass-action min-h-[40px] px-3 text-xs font-medium disabled:opacity-40">复制清单</button>
-                      <button type="button" onClick={() => setIsDownloadSettingsOpen(true)} disabled={!mappedPixelData} className="glass-action col-span-2 min-h-[40px] px-3 text-xs font-medium disabled:opacity-40">导出图纸</button>
+                      <button type="button" onClick={openDownloadSettings} disabled={!mappedPixelData} className="glass-action col-span-2 min-h-[40px] px-3 text-xs font-medium disabled:opacity-40">导出图纸</button>
                     </div>
                   </section>
 
@@ -5219,7 +5649,7 @@ export default function Home() {
                         ))}
                       </div>
                       <div className="grid grid-cols-2 gap-2">
-                        <button type="button" onClick={() => setIsCustomPaletteEditorOpen(true)} className="glass-action min-h-[40px] px-3 text-xs font-medium">管理色板</button>
+                        <button type="button" onClick={openCustomPaletteEditor} className="glass-action min-h-[40px] px-3 text-xs font-medium">管理色板</button>
                         <button type="button" onClick={handleAutoRemoveBackground} disabled={!mappedPixelData} className="glass-action min-h-[40px] px-3 text-xs font-medium disabled:opacity-40">一键去背景</button>
                       </div>
                     </div>
