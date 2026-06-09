@@ -1180,6 +1180,7 @@ const floatAnimation = `
 
     .mobile-stage-scroll {
       padding: 8px;
+      padding-bottom: calc(5.8rem + env(safe-area-inset-bottom));
       overscroll-behavior: contain;
     }
 
@@ -1521,7 +1522,7 @@ const floatAnimation = `
     .mobile-editor-drawer {
       left: 0.5rem;
       bottom: calc(4.55rem + env(safe-area-inset-bottom));
-      width: 84px;
+      width: 112px;
       max-height: calc(100dvh - 7.1rem - env(safe-area-inset-bottom));
       animation: railSlideIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
     }
@@ -2346,9 +2347,6 @@ export default function Home() {
 
   const handleEditorToolChange = (tool: EditorTool) => {
     setActiveEditorTool(tool);
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
-      setIsMobileEditorRailOpen(false);
-    }
     setTooltipData(null);
     setIsEraseMode(false);
     setColorReplaceState({ isActive: false, step: 'select-source' });
