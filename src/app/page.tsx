@@ -5432,11 +5432,11 @@ export default function Home() {
                               />
                             )}
                           </div>
-                          {(workspaceMode === 'preview' || workspaceMode === 'optimize') && (
+                          {(workspaceMode === 'preview' || workspaceMode === 'optimize') && !isPhoneViewport && (
                             <CanvasScaleControl
                               scale={workspaceCanvasScale}
                               onChange={handleWorkspaceCanvasScaleChange}
-                              variant={isPhoneViewport ? 'viewport' : 'stage'}
+                              variant="stage"
                             />
                           )}
                           {workspaceMode === 'edit' && isMobileEditorRailOpen && (
@@ -5687,6 +5687,14 @@ export default function Home() {
             </div>
           </div>
         </nav>
+
+        {isPhoneViewport && mappedPixelData && gridDimensions && (workspaceMode === 'preview' || workspaceMode === 'optimize') && (
+          <CanvasScaleControl
+            scale={workspaceCanvasScale}
+            onChange={handleWorkspaceCanvasScaleChange}
+            variant="viewport"
+          />
+        )}
 
         {isMobilePanelOpen && mappedPixelData && gridDimensions && (
           <button
