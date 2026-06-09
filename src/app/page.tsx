@@ -989,12 +989,12 @@ const floatAnimation = `
     animation: toolbarSlideUp 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  .mobile-command-bar > div {
+  .mobile-command-scroll {
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
 
-  .mobile-command-bar > div::-webkit-scrollbar {
+  .mobile-command-scroll::-webkit-scrollbar {
     display: none;
   }
 
@@ -1211,6 +1211,10 @@ const floatAnimation = `
       padding: 14px 14px 12px;
     }
 
+    .preview-board.preview-board-scalable {
+      padding-bottom: 72px;
+    }
+
     .preview-signature-zone {
       margin-top: 8px;
       min-height: 22px;
@@ -1220,14 +1224,15 @@ const floatAnimation = `
     }
 
     .canvas-scale-control {
-      bottom: 0.5rem;
-      left: 0.5rem;
-      right: 0.5rem;
-      transform: none;
+      bottom: 0.65rem;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
       gap: 4px;
-      max-width: none;
+      width: max-content;
+      max-width: calc(100% - 1rem);
       justify-content: center;
-      padding: 6px;
+      padding: 6px 8px;
     }
 
     .canvas-scale-control button {
@@ -1331,16 +1336,38 @@ const floatAnimation = `
       min-height: 40px;
       padding: 9px 12px;
       font-size: 12px;
+      animation: none;
+      box-shadow: 0 12px 24px rgba(var(--shadow-rgb),0.12);
+      backdrop-filter: blur(10px) saturate(1.08);
+      -webkit-backdrop-filter: blur(10px) saturate(1.08);
     }
 
     .mobile-command-bar {
       bottom: calc(0.5rem + env(safe-area-inset-bottom));
       border-radius: 16px;
+      box-shadow: 0 14px 26px rgba(var(--shadow-rgb),0.12);
+      backdrop-filter: blur(12px) saturate(1.08);
+      -webkit-backdrop-filter: blur(12px) saturate(1.08);
     }
 
-    .mobile-command-bar > div {
+    .mobile-command-bar-inner {
       gap: 6px;
       padding: 6px;
+    }
+
+    .mobile-command-fixed {
+      flex: 0 0 auto;
+      gap: 6px;
+    }
+
+    .mobile-command-scroll {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .mobile-command-scroll > div {
+      gap: 6px;
+      width: max-content;
     }
 
     .mobile-command-bar button,
@@ -1487,6 +1514,51 @@ const floatAnimation = `
     .download-panel-card button,
     .settings-panel-card button {
       white-space: nowrap;
+    }
+
+    .mobile-editor-drawer {
+      left: 0.5rem;
+      bottom: calc(4.55rem + env(safe-area-inset-bottom));
+      width: 84px;
+      max-height: calc(100dvh - 7.1rem - env(safe-area-inset-bottom));
+      animation: railSlideIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .mobile-editor-drawer-card {
+      border-radius: 18px;
+      border: 1px solid rgba(var(--line-rgb),0.18);
+      background: rgba(var(--panel-rgb),0.92);
+      box-shadow: 0 16px 28px rgba(var(--shadow-rgb),0.12);
+      backdrop-filter: blur(12px) saturate(1.08);
+      -webkit-backdrop-filter: blur(12px) saturate(1.08);
+    }
+
+    .mobile-editor-drawer .editor-tool-rail-drawer {
+      border: 0;
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+    }
+
+    .tech-grid-bg,
+    .animate-float,
+    .focus-current-bead {
+      animation: none;
+    }
+
+    .glass-action::after,
+    .editor-tool-rail button::after {
+      display: none;
+    }
+
+    .glass-action,
+    .preview-board,
+    .workspace-side-panel-shell .editor-side-panel,
+    .settings-shell,
+    .palette-modal {
+      box-shadow: 0 14px 28px rgba(var(--shadow-rgb),0.1);
+      backdrop-filter: blur(12px) saturate(1.08);
+      -webkit-backdrop-filter: blur(12px) saturate(1.08);
     }
   }
 
@@ -1995,6 +2067,7 @@ export default function Home() {
   const [appearanceSettings, setAppearanceSettings] = useState<AppearanceSettings>(defaultAppearanceSettings);
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>('optimize');
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState<boolean>(false);
+  const [isMobileEditorRailOpen, setIsMobileEditorRailOpen] = useState<boolean>(false);
   const intendedWorkspaceModeRef = useRef<WorkspaceMode>('optimize');
   const [activeEditorTool, setActiveEditorTool] = useState<EditorTool>('brush');
   const [showEditorMinimap, setShowEditorMinimap] = useState<boolean>(true);
@@ -2124,34 +2197,49 @@ export default function Home() {
     setTimeout(() => setToastMessage(null), 2000);
   }, []);
 
+  const closeMobileWorkspaceOverlays = useCallback(() => {
+    setIsMobilePanelOpen(false);
+    setIsMobileEditorRailOpen(false);
+  }, []);
+
   const handleWorkspaceCanvasScaleChange = useCallback((value: number) => {
     setWorkspaceCanvasScaleTouched(true);
     setWorkspaceCanvasScale(value);
   }, []);
 
   const openCustomPaletteEditor = useCallback(() => {
-    setIsMobilePanelOpen(false);
+    closeMobileWorkspaceOverlays();
     setIsCustomPaletteEditorOpen(true);
-  }, []);
+  }, [closeMobileWorkspaceOverlays]);
 
   const openDownloadSettings = useCallback(() => {
-    setIsMobilePanelOpen(false);
+    closeMobileWorkspaceOverlays();
     setIsDownloadSettingsOpen(true);
-  }, []);
+  }, [closeMobileWorkspaceOverlays]);
 
   const triggerMainImport = useCallback(() => {
     mainImportInputRef.current?.click();
-    setIsMobilePanelOpen(false);
-  }, []);
+    closeMobileWorkspaceOverlays();
+  }, [closeMobileWorkspaceOverlays]);
 
   const toggleAppearancePanel = useCallback(() => {
-    setIsMobilePanelOpen(false);
+    closeMobileWorkspaceOverlays();
     setIsAppearancePanelOpen(prev => !prev);
-  }, []);
+  }, [closeMobileWorkspaceOverlays]);
 
   const openFocusColorPanel = useCallback(() => {
-    setIsMobilePanelOpen(false);
+    closeMobileWorkspaceOverlays();
     setFocusState(prev => ({ ...prev, showColorPanel: true }));
+  }, [closeMobileWorkspaceOverlays]);
+
+  const handleToggleMobilePanel = useCallback(() => {
+    setIsMobileEditorRailOpen(false);
+    setIsMobilePanelOpen(prev => !prev);
+  }, []);
+
+  const handleToggleMobileEditorRail = useCallback(() => {
+    setIsMobilePanelOpen(false);
+    setIsMobileEditorRailOpen(prev => !prev);
   }, []);
 
   const selectedTheme = appearanceThemes.find(theme => theme.key === appearanceSettings.theme) || appearanceThemes[0];
@@ -2222,6 +2310,7 @@ export default function Home() {
 
   const handleWorkspaceModeChange = (mode: WorkspaceMode) => {
     setIsMobilePanelOpen(false);
+    setIsMobileEditorRailOpen(false);
 
     if (mode === 'edit') {
       if (!mappedPixelData || !gridDimensions) return;
@@ -2229,6 +2318,9 @@ export default function Home() {
       setIsManualColoringMode(true);
       setWorkspaceMode('edit');
       setTooltipData(null);
+      if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+        setShowEditorMinimap(false);
+      }
       return;
     }
 
@@ -2252,6 +2344,9 @@ export default function Home() {
 
   const handleEditorToolChange = (tool: EditorTool) => {
     setActiveEditorTool(tool);
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
+      setIsMobileEditorRailOpen(false);
+    }
     setTooltipData(null);
     setIsEraseMode(false);
     setColorReplaceState({ isActive: false, step: 'select-source' });
@@ -5233,7 +5328,7 @@ export default function Home() {
                               workspaceMode === 'preview'
                                 ? `preview-board-pretty preview-material-${previewSettings.material} rounded-[22px] px-5 pb-4 pt-5 sm:px-7 sm:pb-5 sm:pt-7`
                                 : 'rounded-xl p-2'
-                            }`}
+                            } ${(workspaceMode === 'preview' || workspaceMode === 'optimize') ? 'preview-board-scalable' : ''}`}
                             style={workspaceMode === 'preview' ? previewBoardStyle : { background: 'rgba(255,255,255,0.7)' }}
                           >
                             <div className="relative z-10 flex flex-col items-center">
@@ -5286,10 +5381,10 @@ export default function Home() {
                                 </div>
                               )}
                             </div>
+                            {(workspaceMode === 'preview' || workspaceMode === 'optimize') && (
+                              <CanvasScaleControl scale={workspaceCanvasScale} onChange={handleWorkspaceCanvasScaleChange} />
+                            )}
                           </div>
-                          {(workspaceMode === 'preview' || workspaceMode === 'optimize') && (
-                            <CanvasScaleControl scale={workspaceCanvasScale} onChange={handleWorkspaceCanvasScaleChange} />
-                          )}
                           {workspaceMode === 'edit' && showEditorMinimap && (
                             <EditorMinimap
                               mappedPixelData={mappedPixelData}
@@ -5326,7 +5421,35 @@ export default function Home() {
                         showMinimap={showEditorMinimap}
                         onToolChange={handleEditorToolChange}
                         onToggleMinimap={() => setShowEditorMinimap(prev => !prev)}
+                        className="hidden md:flex"
                       />
+                      {isMobileEditorRailOpen && (
+                        <div className="mobile-editor-drawer fixed z-[85] md:hidden">
+                          <div className="mobile-editor-drawer-card flex max-h-full flex-col overflow-hidden p-2">
+                            <div className="mb-2 flex items-center justify-between gap-2 px-1">
+                              <span className="text-[11px] font-semibold tracking-[0.08em] text-[var(--muted)]">工具</span>
+                              <button
+                                type="button"
+                                onClick={() => setIsMobileEditorRailOpen(false)}
+                                className="glass-action grid h-8 w-8 place-items-center px-0"
+                                aria-label="收起工具栏"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M18 6L6 18" /><path d="M6 6l12 12" /></svg>
+                              </button>
+                            </div>
+                            <EditorToolRail
+                              activeTool={activeEditorTool}
+                              selectedColor={selectedColor}
+                              fallbackColor={currentGridColors[0] || fullPaletteColors[0] || null}
+                              selectedColorSystem={selectedColorSystem}
+                              showMinimap={showEditorMinimap}
+                              onToolChange={handleEditorToolChange}
+                              onToggleMinimap={() => setShowEditorMinimap(prev => !prev)}
+                              variant="drawer"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -5441,78 +5564,94 @@ export default function Home() {
           </div>
         </footer>
 
-        <nav className={`mobile-command-bar fixed bottom-2 left-2 right-2 rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.82)] shadow-[0_18px_48px_rgba(var(--shadow-rgb),0.18)] backdrop-blur-2xl md:hidden ${workspaceMode === 'focus' ? 'hidden' : ''} ${isMobilePanelOpen ? 'z-[80]' : 'z-50'}`} aria-label="手机快捷操作">
-          <div className="flex gap-2 overflow-x-auto p-2">
-            {mappedPixelData && gridDimensions && (
-              <button
-                type="button"
-                onClick={() => setIsMobilePanelOpen(prev => !prev)}
-                className={`glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium ${isMobilePanelOpen ? 'glass-action-active' : ''}`}
-                aria-expanded={isMobilePanelOpen}
-              >
-                {isMobilePanelOpen ? '收起' : '面板'}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={triggerMainImport}
-              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
-            >
-              导入
-            </button>
-            <button
-              type="button"
-              onClick={openCustomPaletteEditor}
-              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
-            >
-              色板
-            </button>
-            {mappedPixelData && gridDimensions && (
-              <button
-                type="button"
-                onClick={openDownloadSettings}
-                disabled={activeBeadPalette.length === 0}
-                className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                下载
-              </button>
-            )}
-            {workspaceMode === 'edit' && (
-              <>
+        <nav className={`mobile-command-bar fixed bottom-2 left-2 right-2 rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.82)] shadow-[0_18px_48px_rgba(var(--shadow-rgb),0.18)] backdrop-blur-2xl md:hidden ${workspaceMode === 'focus' ? 'hidden' : ''} ${isMobilePanelOpen || isMobileEditorRailOpen ? 'z-[80]' : 'z-50'}`} aria-label="手机快捷操作">
+          <div className="mobile-command-bar-inner flex items-center">
+            <div className="mobile-command-fixed flex items-center">
+              {mappedPixelData && gridDimensions && (
                 <button
                   type="button"
-                  onClick={handleUndoEdit}
-                  disabled={editHistory.length === 0}
-                  className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-35"
+                  onClick={handleToggleMobilePanel}
+                  className={`glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium ${isMobilePanelOpen ? 'glass-action-active' : ''}`}
+                  aria-expanded={isMobilePanelOpen}
                 >
-                  撤销
+                  {isMobilePanelOpen ? '收起' : '面板'}
+                </button>
+              )}
+              {workspaceMode === 'edit' && mappedPixelData && gridDimensions && (
+                <button
+                  type="button"
+                  onClick={handleToggleMobileEditorRail}
+                  className={`glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium ${isMobileEditorRailOpen ? 'glass-action-active' : ''}`}
+                  aria-expanded={isMobileEditorRailOpen}
+                >
+                  工具
+                </button>
+              )}
+            </div>
+            <div className="mobile-command-scroll overflow-x-auto">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={triggerMainImport}
+                  className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
+                >
+                  导入
                 </button>
                 <button
                   type="button"
-                  onClick={handleRedoEdit}
-                  disabled={redoHistory.length === 0}
-                  className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-35"
+                  onClick={openCustomPaletteEditor}
+                  className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
                 >
-                  恢复
+                  色板
                 </button>
-              </>
-            )}
-            {mappedPixelData && gridDimensions && (
-              <button
-                type="button"
-                onClick={handleSaveDraft}
-                className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
-              >
-                保存
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={handleRestoreDraft}
-              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
-            >
-              草稿
-            </button>
+                {mappedPixelData && gridDimensions && (
+                  <button
+                    type="button"
+                    onClick={openDownloadSettings}
+                    disabled={activeBeadPalette.length === 0}
+                    className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    下载
+                  </button>
+                )}
+                {workspaceMode === 'edit' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleUndoEdit}
+                      disabled={editHistory.length === 0}
+                      className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-35"
+                    >
+                      撤销
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRedoEdit}
+                      disabled={redoHistory.length === 0}
+                      className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-35"
+                    >
+                      恢复
+                    </button>
+                  </>
+                )}
+                {mappedPixelData && gridDimensions && (
+                  <button
+                    type="button"
+                    onClick={handleSaveDraft}
+                    className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
+                  >
+                    保存
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleRestoreDraft}
+                  className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
+                >
+                  草稿
+                </button>
+              </div>
+            </div>
           </div>
         </nav>
 
@@ -5522,6 +5661,14 @@ export default function Home() {
             className="mobile-panel-scrim fixed inset-0 z-[60] bg-black/18 md:hidden"
             onClick={() => setIsMobilePanelOpen(false)}
             aria-label="关闭面板"
+          />
+        )}
+        {isMobileEditorRailOpen && isManualColoringMode && mappedPixelData && gridDimensions && (
+          <button
+            type="button"
+            className="mobile-panel-scrim fixed inset-0 z-[82] bg-black/14 md:hidden"
+            onClick={() => setIsMobileEditorRailOpen(false)}
+            aria-label="关闭工具栏"
           />
         )}
       </div>
