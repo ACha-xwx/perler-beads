@@ -1363,11 +1363,13 @@ const floatAnimation = `
     .mobile-command-scroll {
       min-width: 0;
       flex: 1 1 auto;
+      overflow-y: hidden;
     }
 
     .mobile-command-scroll > div {
       gap: 6px;
       width: max-content;
+      padding-right: 2px;
     }
 
     .mobile-command-bar button,
