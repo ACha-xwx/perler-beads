@@ -1212,10 +1212,6 @@ const floatAnimation = `
       padding: 14px 14px 12px;
     }
 
-    .preview-board.preview-board-scalable {
-      padding-bottom: 72px;
-    }
-
     .preview-signature-zone {
       margin-top: 8px;
       min-height: 22px;
@@ -1224,30 +1220,35 @@ const floatAnimation = `
       font-size: 11px;
     }
 
-    .canvas-scale-control {
-      bottom: 0.65rem;
-      left: 50%;
+    .canvas-scale-control-viewport {
+      position: fixed;
+      bottom: calc(5.15rem + env(safe-area-inset-bottom));
+      left: 0.75rem;
       right: auto;
-      transform: translateX(-50%);
+      transform: none;
       gap: 4px;
       width: max-content;
-      max-width: calc(100% - 1rem);
+      max-width: calc(100vw - 1.5rem);
       justify-content: center;
       padding: 6px 8px;
+      z-index: 92;
     }
 
-    .canvas-scale-control button {
+    .canvas-scale-control-viewport button,
+    .canvas-scale-control-stage button {
       height: 30px;
       width: 30px;
       min-width: 30px;
     }
 
-    .canvas-scale-control .canvas-scale-value {
+    .canvas-scale-control-viewport .canvas-scale-value,
+    .canvas-scale-control-stage .canvas-scale-value {
       min-width: 44px;
       width: auto;
     }
 
-    .canvas-scale-control .control-range {
+    .canvas-scale-control-viewport .control-range,
+    .canvas-scale-control-stage .control-range {
       width: min(33vw, 104px);
     }
 
@@ -1519,28 +1520,44 @@ const floatAnimation = `
       white-space: nowrap;
     }
 
-    .mobile-editor-drawer {
-      left: 0.5rem;
-      bottom: calc(4.55rem + env(safe-area-inset-bottom));
-      width: 112px;
-      max-height: calc(100dvh - 7.1rem - env(safe-area-inset-bottom));
-      animation: railSlideIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    .mobile-stage-scroll-with-editor-rail {
+      padding-left: 5rem;
     }
 
-    .mobile-editor-drawer-card {
-      border-radius: 18px;
+    .mobile-editor-popover {
+      left: 0.5rem;
+      top: 0.75rem;
+      bottom: calc(5.5rem + env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      width: auto;
+      pointer-events: none;
+      animation: railSlideIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      z-index: 92;
+    }
+
+    .mobile-editor-popover .editor-tool-rail-drawer {
+      min-width: 78px;
+      width: 78px;
+      max-height: 100%;
+      gap: 6px;
+      padding: 8px 6px;
+      border-radius: 26px;
       border: 1px solid rgba(var(--line-rgb),0.18);
-      background: rgba(var(--panel-rgb),0.92);
-      box-shadow: 0 16px 28px rgba(var(--shadow-rgb),0.12);
+      background: rgba(var(--panel-rgb),0.94);
+      box-shadow: 0 16px 30px rgba(var(--shadow-rgb),0.14);
       backdrop-filter: blur(12px) saturate(1.08);
       -webkit-backdrop-filter: blur(12px) saturate(1.08);
+      pointer-events: auto;
     }
 
-    .mobile-editor-drawer .editor-tool-rail-drawer {
-      border: 0;
-      background: transparent;
-      box-shadow: none;
-      padding: 0;
+    .mobile-editor-popover .editor-tool-rail-drawer button {
+      flex-shrink: 0;
+    }
+
+    .mobile-editor-popover .editor-tool-rail-drawer > button:not(:first-child) {
+      height: 42px;
+      width: 42px;
     }
 
     .tech-grid-bg,
@@ -1762,14 +1779,20 @@ function StickerMark({
 function CanvasScaleControl({
   scale,
   onChange,
+  variant = 'stage',
 }: {
   scale: number;
   onChange: (scale: number) => void;
+  variant?: 'stage' | 'viewport';
 }) {
   const setScale = (value: number) => onChange(Math.max(0.5, Math.min(2, Number(value.toFixed(2)))));
+  const shellClassName =
+    variant === 'viewport'
+      ? 'canvas-scale-control canvas-scale-control-viewport fixed z-[74] flex items-center gap-2 rounded-xl border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.78)] px-2.5 py-2 text-xs text-[var(--text)] shadow-[0_16px_38px_rgba(var(--shadow-rgb),0.14)] backdrop-blur-xl'
+      : 'canvas-scale-control canvas-scale-control-stage absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.78)] px-2.5 py-2 text-xs text-[var(--text)] shadow-[0_16px_38px_rgba(var(--shadow-rgb),0.14)] backdrop-blur-xl';
 
   return (
-    <div className="canvas-scale-control absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-2 rounded-xl border border-[rgba(var(--line-rgb),0.16)] bg-[rgba(var(--panel-rgb),0.78)] px-2.5 py-2 text-xs text-[var(--text)] shadow-[0_16px_38px_rgba(var(--shadow-rgb),0.14)] backdrop-blur-xl" aria-label="画布缩放">
+    <div className={shellClassName} aria-label="画布缩放">
       <span className="hidden text-[10px] font-medium text-[var(--muted)] sm:inline">画布缩放</span>
       <button type="button" onClick={() => setScale(scale - 0.1)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-white/62" aria-label="缩小画布">-</button>
       <input
@@ -2199,6 +2222,7 @@ export default function Home() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2000);
   }, []);
+  const [isPhoneViewport, setIsPhoneViewport] = useState(false);
 
   const closeMobileWorkspaceOverlays = useCallback(() => {
     setIsMobilePanelOpen(false);
@@ -2250,6 +2274,22 @@ export default function Home() {
   const appearanceStyle = {
     '--ui-font': selectedFont.stack,
   } as React.CSSProperties;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const syncViewport = () => setIsPhoneViewport(mediaQuery.matches);
+    syncViewport();
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', syncViewport);
+      return () => mediaQuery.removeEventListener('change', syncViewport);
+    }
+
+    mediaQuery.addListener(syncViewport);
+    return () => mediaQuery.removeListener(syncViewport);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -5322,76 +5362,96 @@ export default function Home() {
                           </div>
                         </div>
                       ) : (
-                        <div className={`mobile-stage-scroll relative flex min-h-0 flex-1 items-start justify-start overflow-auto p-3 sm:p-5 ${workspaceMode === 'preview' ? 'preview-stage' : 'editor-stage'}`}>
-                          <div
-                            className={`preview-board relative m-auto overflow-hidden border border-[rgba(var(--line-rgb),0.2)] shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)] ${
-                              workspaceMode === 'preview'
-                                ? `preview-board-pretty preview-material-${previewSettings.material} rounded-[22px] px-5 pb-4 pt-5 sm:px-7 sm:pb-5 sm:pt-7`
-                                : 'rounded-xl p-2'
-                            } ${(workspaceMode === 'preview' || workspaceMode === 'optimize') ? 'preview-board-scalable' : ''}`}
-                            style={workspaceMode === 'preview' ? previewBoardStyle : { background: 'rgba(255,255,255,0.7)' }}
-                          >
-                            <div className="relative z-10 flex flex-col items-center">
-                              <div
-                                className={`preview-art-surface relative z-10 overflow-hidden border border-[rgba(var(--line-rgb),0.22)] bg-white ${
-                                  workspaceMode === 'preview' ? 'p-0' : ''
-                                }`}
-                                style={workspaceMode === 'preview' ? { ...previewCanvasWrapStyle, ...previewPaperStyle } : undefined}
-                              >
-                                <PixelatedPreviewCanvas
-                                  canvasRef={pixelatedCanvasRef}
-                                  mappedPixelData={mappedPixelData}
-                                  gridDimensions={gridDimensions}
-                                  isManualColoringMode={isManualColoringMode}
-                                  onInteraction={handleCanvasInteraction}
-                                  highlightColorKey={highlightColorKey}
-                                  panMode={isManualColoringMode && activeEditorTool === 'pan'}
-                                  dragPaintMode={isManualColoringMode && (activeEditorTool === 'brush' || activeEditorTool === 'eraser')}
-                                  displayScale={workspaceMode === 'preview' || workspaceMode === 'optimize' ? workspaceCanvasScale : 1}
-                                />
-                                {stickers.map(sticker => {
-                                  const layer = editorLayers.find(item => item.id === sticker.layerId);
-                                  if (!layer?.visible) return null;
-                                  return (
-                                    <button
-                                      key={sticker.id}
-                                      type="button"
-                                      onPointerDown={event => handleStickerPointerDown(event, sticker.id)}
-                                      onPointerMove={event => handleStickerPointerMove(event, sticker.id)}
-                                      onPointerUp={handleStickerPointerEnd}
-                                      onPointerCancel={handleStickerPointerEnd}
-                                      className={`absolute z-20 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl border border-transparent p-1 transition ${
-                                        layer.id === activeLayerId
-                                          ? 'border-[rgba(var(--accent-rgb),0.5)] bg-white/28 shadow-[0_10px_24px_rgba(var(--shadow-rgb),0.14)]'
-                                          : 'hover:border-[rgba(var(--line-rgb),0.22)] hover:bg-white/22'
-                                      } ${layer.locked ? 'cursor-not-allowed opacity-80' : 'cursor-move'}`}
-                                      style={{ left: `${sticker.x}%`, top: `${sticker.y}%`, touchAction: 'none' }}
-                                      title={layer.locked ? '图层已锁定' : '拖动贴纸'}
-                                    >
-                                      <StickerMark sticker={sticker} viewScale={workspaceMode === 'preview' || workspaceMode === 'optimize' ? workspaceCanvasScale : 1} />
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                              {workspaceMode === 'preview' && (
-                                <div className={`preview-signature-zone pointer-events-none relative z-10 mt-3 flex min-h-[28px] w-full items-center justify-center rounded-b-[16px] px-4 text-center text-[12px] font-semibold text-[var(--text)] ${previewSettings.brandText.trim() ? 'opacity-100' : 'opacity-0'}`}>
-                                  <span className="preview-brand-strip max-w-full truncate">
-                                    {previewSettings.brandText.trim() || ' '}
-                                  </span>
+                        <div className="relative flex min-h-0 flex-1 flex-col">
+                          <div className={`mobile-stage-scroll relative flex min-h-0 flex-1 items-start justify-start overflow-auto p-3 sm:p-5 ${workspaceMode === 'preview' ? 'preview-stage' : 'editor-stage'} ${workspaceMode === 'edit' && isMobileEditorRailOpen ? 'mobile-stage-scroll-with-editor-rail' : ''}`}>
+                            <div
+                              className={`preview-board relative m-auto overflow-hidden border border-[rgba(var(--line-rgb),0.2)] shadow-[0_20px_60px_rgba(var(--shadow-rgb),0.12)] ${
+                                workspaceMode === 'preview'
+                                  ? `preview-board-pretty preview-material-${previewSettings.material} rounded-[22px] px-5 pb-4 pt-5 sm:px-7 sm:pb-5 sm:pt-7`
+                                  : 'rounded-xl p-2'
+                              }`}
+                              style={workspaceMode === 'preview' ? previewBoardStyle : { background: 'rgba(255,255,255,0.7)' }}
+                            >
+                              <div className="relative z-10 flex flex-col items-center">
+                                <div
+                                  className={`preview-art-surface relative z-10 overflow-hidden border border-[rgba(var(--line-rgb),0.22)] bg-white ${
+                                    workspaceMode === 'preview' ? 'p-0' : ''
+                                  }`}
+                                  style={workspaceMode === 'preview' ? { ...previewCanvasWrapStyle, ...previewPaperStyle } : undefined}
+                                >
+                                  <PixelatedPreviewCanvas
+                                    canvasRef={pixelatedCanvasRef}
+                                    mappedPixelData={mappedPixelData}
+                                    gridDimensions={gridDimensions}
+                                    isManualColoringMode={isManualColoringMode}
+                                    onInteraction={handleCanvasInteraction}
+                                    highlightColorKey={highlightColorKey}
+                                    panMode={isManualColoringMode && activeEditorTool === 'pan'}
+                                    dragPaintMode={isManualColoringMode && (activeEditorTool === 'brush' || activeEditorTool === 'eraser')}
+                                    displayScale={workspaceMode === 'preview' || workspaceMode === 'optimize' ? workspaceCanvasScale : 1}
+                                  />
+                                  {stickers.map(sticker => {
+                                    const layer = editorLayers.find(item => item.id === sticker.layerId);
+                                    if (!layer?.visible) return null;
+                                    return (
+                                      <button
+                                        key={sticker.id}
+                                        type="button"
+                                        onPointerDown={event => handleStickerPointerDown(event, sticker.id)}
+                                        onPointerMove={event => handleStickerPointerMove(event, sticker.id)}
+                                        onPointerUp={handleStickerPointerEnd}
+                                        onPointerCancel={handleStickerPointerEnd}
+                                        className={`absolute z-20 grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-xl border border-transparent p-1 transition ${
+                                          layer.id === activeLayerId
+                                            ? 'border-[rgba(var(--accent-rgb),0.5)] bg-white/28 shadow-[0_10px_24px_rgba(var(--shadow-rgb),0.14)]'
+                                            : 'hover:border-[rgba(var(--line-rgb),0.22)] hover:bg-white/22'
+                                        } ${layer.locked ? 'cursor-not-allowed opacity-80' : 'cursor-move'}`}
+                                        style={{ left: `${sticker.x}%`, top: `${sticker.y}%`, touchAction: 'none' }}
+                                        title={layer.locked ? '图层已锁定' : '拖动贴纸'}
+                                      >
+                                        <StickerMark sticker={sticker} viewScale={workspaceMode === 'preview' || workspaceMode === 'optimize' ? workspaceCanvasScale : 1} />
+                                      </button>
+                                    );
+                                  })}
                                 </div>
-                              )}
+                                {workspaceMode === 'preview' && (
+                                  <div className={`preview-signature-zone pointer-events-none relative z-10 mt-3 flex min-h-[28px] w-full items-center justify-center rounded-b-[16px] px-4 text-center text-[12px] font-semibold text-[var(--text)] ${previewSettings.brandText.trim() ? 'opacity-100' : 'opacity-0'}`}>
+                                    <span className="preview-brand-strip max-w-full truncate">
+                                      {previewSettings.brandText.trim() || ' '}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            {(workspaceMode === 'preview' || workspaceMode === 'optimize') && (
-                              <CanvasScaleControl scale={workspaceCanvasScale} onChange={handleWorkspaceCanvasScaleChange} />
+                            {workspaceMode === 'edit' && showEditorMinimap && (
+                              <EditorMinimap
+                                mappedPixelData={mappedPixelData}
+                                gridDimensions={gridDimensions}
+                                targetCanvasRef={pixelatedCanvasRef}
+                                onClose={() => setShowEditorMinimap(false)}
+                              />
                             )}
                           </div>
-                          {workspaceMode === 'edit' && showEditorMinimap && (
-                            <EditorMinimap
-                              mappedPixelData={mappedPixelData}
-                              gridDimensions={gridDimensions}
-                              targetCanvasRef={pixelatedCanvasRef}
-                              onClose={() => setShowEditorMinimap(false)}
+                          {(workspaceMode === 'preview' || workspaceMode === 'optimize') && (
+                            <CanvasScaleControl
+                              scale={workspaceCanvasScale}
+                              onChange={handleWorkspaceCanvasScaleChange}
+                              variant={isPhoneViewport ? 'viewport' : 'stage'}
                             />
+                          )}
+                          {workspaceMode === 'edit' && isMobileEditorRailOpen && (
+                            <div className="mobile-editor-popover absolute md:hidden">
+                              <EditorToolRail
+                                activeTool={activeEditorTool}
+                                selectedColor={selectedColor}
+                                fallbackColor={currentGridColors[0] || fullPaletteColors[0] || null}
+                                selectedColorSystem={selectedColorSystem}
+                                showMinimap={showEditorMinimap}
+                                onToolChange={handleEditorToolChange}
+                                onToggleMinimap={() => setShowEditorMinimap(prev => !prev)}
+                                variant="drawer"
+                              />
+                            </div>
                           )}
                         </div>
                       )}
@@ -5423,33 +5483,6 @@ export default function Home() {
                         onToggleMinimap={() => setShowEditorMinimap(prev => !prev)}
                         className="hidden md:flex"
                       />
-                      {isMobileEditorRailOpen && (
-                        <div className="mobile-editor-drawer fixed z-[85] md:hidden">
-                          <div className="mobile-editor-drawer-card flex max-h-full flex-col overflow-hidden p-2">
-                            <div className="mb-2 flex items-center justify-between gap-2 px-1">
-                              <span className="text-[11px] font-semibold tracking-[0.08em] text-[var(--muted)]">工具</span>
-                              <button
-                                type="button"
-                                onClick={() => setIsMobileEditorRailOpen(false)}
-                                className="glass-action grid h-8 w-8 place-items-center px-0"
-                                aria-label="收起工具栏"
-                              >
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M18 6L6 18" /><path d="M6 6l12 12" /></svg>
-                              </button>
-                            </div>
-                            <EditorToolRail
-                              activeTool={activeEditorTool}
-                              selectedColor={selectedColor}
-                              fallbackColor={currentGridColors[0] || fullPaletteColors[0] || null}
-                              selectedColorSystem={selectedColorSystem}
-                              showMinimap={showEditorMinimap}
-                              onToolChange={handleEditorToolChange}
-                              onToggleMinimap={() => setShowEditorMinimap(prev => !prev)}
-                              variant="drawer"
-                            />
-                          </div>
-                        </div>
-                      )}
                     </>
                   )}
                 </div>
@@ -5661,14 +5694,6 @@ export default function Home() {
             className="mobile-panel-scrim fixed inset-0 z-[60] bg-black/18 md:hidden"
             onClick={() => setIsMobilePanelOpen(false)}
             aria-label="关闭面板"
-          />
-        )}
-        {isMobileEditorRailOpen && isManualColoringMode && mappedPixelData && gridDimensions && (
-          <button
-            type="button"
-            className="mobile-panel-scrim fixed inset-0 z-[82] bg-black/14 md:hidden"
-            onClick={() => setIsMobileEditorRailOpen(false)}
-            aria-label="关闭工具栏"
           />
         )}
       </div>

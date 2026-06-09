@@ -246,7 +246,7 @@ export function EditorToolRail({
   const displayKey = displayColor ? getColorKeyByHex(displayColor.color, selectedColorSystem) : 'T01';
   const railClassName =
     variant === 'drawer'
-      ? 'editor-tool-rail editor-tool-rail-drawer flex h-full w-full flex-col items-center gap-1 overflow-y-auto rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.9)] p-2 shadow-[0_12px_28px_rgba(var(--shadow-rgb),0.14)] min-w-[96px]'
+      ? 'editor-tool-rail editor-tool-rail-drawer flex w-full flex-col items-center gap-1 overflow-y-auto rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.9)] p-2 shadow-[0_12px_28px_rgba(var(--shadow-rgb),0.14)] min-w-[96px]'
       : 'editor-tool-rail absolute left-3 top-1/2 z-30 flex max-h-[calc(100%-1.5rem)] -translate-y-1/2 flex-col items-center gap-1 overflow-y-auto rounded-2xl border border-[rgba(var(--line-rgb),0.18)] bg-[rgba(var(--panel-rgb),0.78)] p-1.5 shadow-[0_18px_44px_rgba(var(--shadow-rgb),0.16)] backdrop-blur-xl';
 
   return (
