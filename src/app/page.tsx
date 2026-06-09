@@ -2139,6 +2139,11 @@ export default function Home() {
     setIsDownloadSettingsOpen(true);
   }, []);
 
+  const triggerMainImport = useCallback(() => {
+    mainImportInputRef.current?.click();
+    setIsMobilePanelOpen(false);
+  }, []);
+
   const toggleAppearancePanel = useCallback(() => {
     setIsMobilePanelOpen(false);
     setIsAppearancePanelOpen(prev => !prev);
@@ -2382,6 +2387,7 @@ export default function Home() {
 
   const originalCanvasRef = useRef<HTMLCanvasElement>(null);
   const pixelatedCanvasRef = useRef<HTMLCanvasElement>(null);
+  const mainImportInputRef = useRef<HTMLInputElement>(null);
   // ++ 添加: Ref for import file input ++
   const importPaletteInputRef = useRef<HTMLInputElement>(null);
   //const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -5053,15 +5059,13 @@ export default function Home() {
               </button>
 
               <div className="hidden items-center gap-1.5 md:flex">
-                <label className="glass-action relative flex min-h-[44px] cursor-pointer items-center overflow-hidden px-3 text-xs font-medium">
-                  <input
-                    type="file"
-                    accept={IMPORT_FILE_ACCEPT}
-                    onChange={handleFileChange}
-                    className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-                  />
-                  <span className="pointer-events-none relative z-0">导入</span>
-                </label>
+                <button
+                  type="button"
+                  onClick={triggerMainImport}
+                  className="glass-action min-h-[44px] px-3 text-xs font-medium"
+                >
+                  导入
+                </button>
                 <button
                   type="button"
                   onClick={openDownloadSettings}
@@ -5110,6 +5114,15 @@ export default function Home() {
                   ref={importPaletteInputRef}
                   onChange={handleImportPaletteFile}
                   className="hidden"
+                />
+                <input
+                  type="file"
+                  accept={IMPORT_FILE_ACCEPT}
+                  ref={mainImportInputRef}
+                  onChange={handleFileChange}
+                  className="fixed -left-[9999px] top-0 h-px w-px opacity-0"
+                  tabIndex={-1}
+                  aria-hidden="true"
                 />
                 <canvas ref={originalCanvasRef} className="hidden" />
 
@@ -5289,18 +5302,16 @@ export default function Home() {
                       )}
                     </div>
                   ) : (
-                    <label className="mobile-upload-card relative z-10 m-auto flex max-w-sm cursor-pointer flex-col items-center gap-4 overflow-hidden rounded-2xl border border-dashed border-[rgba(var(--line-rgb),0.32)] bg-white/52 px-8 py-10 text-center transition hover:border-[rgba(var(--accent-rgb),0.45)] hover:bg-white/70">
-                      <input
-                        type="file"
-                        accept={IMPORT_FILE_ACCEPT}
-                        onChange={handleFileChange}
-                        className="absolute inset-0 z-20 h-full w-full cursor-pointer opacity-0"
-                      />
+                    <button
+                      type="button"
+                      onClick={triggerMainImport}
+                      className="mobile-upload-card relative z-10 m-auto flex max-w-sm cursor-pointer flex-col items-center gap-4 overflow-hidden rounded-2xl border border-dashed border-[rgba(var(--line-rgb),0.32)] bg-white/52 px-8 py-10 text-center transition hover:border-[rgba(var(--accent-rgb),0.45)] hover:bg-white/70"
+                    >
                       <BeadLogo />
                       <span className="text-lg font-semibold text-[var(--text)]">导入图片或 CSV</span>
                       <span className="mobile-upload-helper text-sm leading-6 text-[var(--muted)]">拖到这里也可以。生成后可编辑、去背景、保存草稿和导出采购清单。</span>
                       <span className="glass-action glass-action-primary px-5 py-2 text-sm font-medium">选择文件</span>
-                    </label>
+                    </button>
                   )}
 
                   {tooltipData && <GridTooltip tooltipData={tooltipData} selectedColorSystem={selectedColorSystem} />}
@@ -5442,15 +5453,13 @@ export default function Home() {
                 {isMobilePanelOpen ? '收起' : '面板'}
               </button>
             )}
-            <label className="glass-action relative flex min-h-[42px] flex-[0_0_auto] cursor-pointer items-center justify-center overflow-hidden px-4 text-xs font-medium">
-              <input
-                type="file"
-                accept={IMPORT_FILE_ACCEPT}
-                onChange={handleFileChange}
-                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-              />
-              <span className="pointer-events-none relative z-0">导入</span>
-            </label>
+            <button
+              type="button"
+              onClick={triggerMainImport}
+              className="glass-action min-h-[42px] flex-[0_0_auto] px-4 text-xs font-medium"
+            >
+              导入
+            </button>
             <button
               type="button"
               onClick={openCustomPaletteEditor}
@@ -5598,15 +5607,7 @@ export default function Home() {
                       <div className="settings-metric rounded-lg p-2"><div className="text-[10px] text-[var(--muted)]">颗数</div><div className="mt-1 text-xs font-semibold text-[var(--text)]">{totalBeadCount || '-'}</div></div>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
-                      <label className="glass-action relative flex min-h-[40px] cursor-pointer items-center justify-center overflow-hidden px-3 text-xs font-medium">
-                        <input
-                          type="file"
-                          accept={IMPORT_FILE_ACCEPT}
-                          onChange={handleFileChange}
-                          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-                        />
-                        <span className="pointer-events-none relative z-0">导入图片</span>
-                      </label>
+                      <button type="button" onClick={triggerMainImport} className="glass-action min-h-[40px] px-3 text-xs font-medium">导入图片</button>
                       <button type="button" onClick={handleSaveDraft} className="glass-action min-h-[40px] px-3 text-xs font-medium">保存草稿</button>
                       <button type="button" onClick={handleRestoreDraft} className="glass-action min-h-[40px] px-3 text-xs font-medium">恢复草稿</button>
                       <button type="button" onClick={handleCopyShoppingList} disabled={!colorCounts} className="glass-action min-h-[40px] px-3 text-xs font-medium disabled:opacity-40">复制清单</button>
